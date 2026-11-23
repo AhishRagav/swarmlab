@@ -1,14 +1,14 @@
 # SwarmLab — Project Status
 
 ## Overview
-SwarmLab is an interactive educational platform for optimization algorithms, built with React, TypeScript, Vite, Tailwind CSS, Zustand, Math.js, Plotly, Recharts, and Vitest.
+SwarmLab is an interactive educational platform for optimization algorithms, built with React, TypeScript, Vite, Tailwind CSS, Zustand, Math.js, Plotly, Recharts, HTML Canvas, and Vitest.
 
 ---
 
-## Current Status: Batch 2 (Phase 4 & Phase 5) (Completed)
+## Current Status: All Planned Phases (Phases 1–7) Completed
 
 ### Phase 1: Foundation (Completed)
-- **Styling**: Tailwind CSS with custom CSS variables (light and dark mode theme tokens) in `src/index.css`.
+- **Styling**: Tailwind CSS v4 with custom CSS variables (light and dark mode theme tokens) in `src/index.css`.
 - **Reusable UI Components**: `Button`, `Input`, `Slider`, `Select`, `Card` (`CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter`) with `cn()` utility in `src/lib/utils.ts`.
 - **Routing & Navigation**: React Router setup in `src/App.tsx` and layout shell in `src/components/Layout.tsx`.
 - **Pages**: Landing page (`src/pages/Home.tsx`), Function Optimizer page, Warehouse Optimizer page.
@@ -72,7 +72,7 @@ SwarmLab is an interactive educational platform for optimization algorithms, bui
   - Per-variable bounds editor with uniform batch-setting tool.
   - Live mathematical expression validation with error hints and variable guide.
   - Full PSO hyperparameter controls ($w, c_1, c_2, \text{swarmSize}, \text{maxIterations}, \text{seed}$).
-  - Syllabus option controls: Initial Velocity (zero vs. random), Boundary Handling (clipping vs. absorb), Inertia Schedule (fixed vs. linear decrease), Velocity Clamping ($V_{\max}$ ratio).
+  - Syllabus option controls: Initial Velocity, Boundary Handling, Inertia Schedule, Velocity Clamping.
   - Simulation control bar (Play, Pause, Step, Reset, Speed slider, Iteration counter).
   - Real-time Best Objective Value card, Convergence Gain percentage, and Swarm Activity.
   - Best solution vector display ($x_1^*, \dots, x_N^*$).
@@ -114,7 +114,7 @@ SwarmLab is an interactive educational platform for optimization algorithms, bui
   - `euclideanDistance`: precise 2D Euclidean distance calculation.
   - `extractWarehouseCoordinates`: maps flat $2K$ position vectors to coordinate pairs.
   - `calculateWarehouseObjective`: exact demand-weighted evaluation.
-  - `analyzeWarehouseSolution`: computes customer-to-warehouse assignments, nearest warehouse index, distance, weighted cost, and per-warehouse aggregated metrics (assigned customers and total demand served).
+  - `analyzeWarehouseSolution`: computes customer-to-warehouse assignments, nearest warehouse index, distance, weighted cost, and per-warehouse aggregated metrics.
   - `createWarehouseProblem`: builds standard `ProblemDefinition` compatible with the PSO engine and SimulationController.
   - `generateRandomCustomers`: deterministic, seeded customer generation supporting equal ($1.0$) and random integer demands ($[1, 10]$).
 - **Interactive Warehouse Optimizer Page (`src/pages/WarehousePage.tsx`)**:
@@ -122,28 +122,68 @@ SwarmLab is an interactive educational platform for optimization algorithms, bui
   - Customer placement modes: Random placement with regeneration vs. Manual coordinate/demand entry and deletion.
   - Customer demand modes: Equal demand, Random demand, and Custom per-customer demands.
   - Configurable 2D spatial coordinate bounds $[minX, maxX] \times [minY, maxY]$.
-  - Full PSO hyperparameter controls with syllabus-aligned options (initial velocity mode, boundary handling, velocity clamping, and linear inertia reduction).
+  - Full PSO hyperparameter controls with syllabus-aligned options.
   - Reusable `SimulationControls` bar for Play, Pause, Step, Reset, and Speed adjustments.
   - Metric summary cards: Total Cost ($F$), Cost Reduction %, and Swarm Scale.
   - Optimized warehouse coordinates card with per-warehouse customer count and total demand served.
   - Detailed customer assignment breakdown table with coordinates, demands, assigned warehouses, and weighted transportation costs.
   - Real-time `ConvergenceChart` tracking warehouse placement optimization across iterations.
 
+### Phase 6: Warehouse Visualizations (Completed)
+- **Canvas Rendering Utilities (`src/visualization/warehouse/canvasUtils.ts`)**:
+  - High-precision world-to-canvas coordinate transformations and canvas-to-world inversions taking padding into account.
+  - Background grid lines and numerical coordinate axes with world labels.
+  - Proportional customer radius calculation based on demand: $r \in [5, 14]$ px.
+  - Distinct harmonious color palette for warehouses and their assigned customer clusters.
+  - Dotted assignment lines connecting each customer to its nearest warehouse.
+  - Distinct customer circles and warehouse square badges ($W_1, W_2, \dots$).
+- **Interactive 2D Warehouse Canvas (`src/visualization/warehouse/WarehouseCanvas.tsx`)**:
+  - Responsive, high-DPI canvas rendering using `ResizeObserver` and `devicePixelRatio`.
+  - Renders candidate swarm positions as faint background points to visualize swarm exploration.
+  - Real-time hover tooltips displaying customer details (coordinates, demand, assigned warehouse, distance) and warehouse details (served count, demand total).
+  - Real-time HUD showing Total Transport Cost ($F$), warehouse count, and customer count.
+  - Interactive legend bar with per-warehouse color swatches.
+  - Click-to-add customer support on the canvas in manual placement mode.
+
+### Phase 7: Registries & Final Polish (Completed)
+- **Algorithm Registry (`src/registries/algorithmRegistry.ts`)**:
+  - Singleton `algorithmRegistry` supporting `register`, `get`, `getOrThrow`, `getAll`, `has`, and `clear`.
+  - Pre-registers `psoFactory` with `defaultPSOConfig`.
+  - Generic interface ready for future algorithms (GA, ABC).
+- **Problem Registry (`src/registries/problemRegistry.ts`)**:
+  - Singleton `problemRegistry` supporting `register`, `get`, `getOrThrow`, `getAll`, `has`, and `clear`.
+  - Pre-registers `function-optimizer` and `warehouse-optimizer` with metadata, route, and problem factories.
+- **Visualization Registry (`src/registries/visualizationRegistry.ts`)**:
+  - Singleton `visualizationRegistry` mapping problems to supported visual representations.
+  - Pre-registers 1D curve, 2D contour, 3D surface, N-D projection, Warehouse 2D Canvas, and convergence charts.
+  - Encapsulates dimension constraints for dimension-adaptive visualizers.
+- **Unified Registries Export (`src/registries/index.ts`)**:
+  - Centralized module export for clean architectural access across the entire app.
+- **Application Integration & Polish**:
+  - Updated `Home.tsx` to dynamically query `problemRegistry` and `algorithmRegistry`.
+  - Both optimizer pages retrieve algorithms via the central registry.
+  - Clean styling, responsive layout, dark-mode compatibility, and input validation across the application.
+- **Documentation**:
+  - Completely rewritten `README.md` with features, setup, user guide, architecture breakdown, and step-by-step developer guide for adding algorithms and problems.
+
 ---
 
 ## Test Results
-- **Vitest Suite**: 6 test files, 36 unit tests passing (`100% pass`).
+- **Vitest Suite**: 9 test files, 62 unit tests passing (`100% pass`).
   - `src/__tests__/smoke.test.ts` (1 test)
-  - `src/__tests__/pso.test.ts` (11 tests: zero velocity init, random velocity init within $\pm 10\%$, velocity clamping at $V_{\max}$, position clipping boundary handling, absorb boundary handling, fixed vs. linearly decreasing inertia $0.9 \to 0.4$, deterministic seeding, immutability, Sphere optimization convergence, $N=20$ scaling)
-  - `src/__tests__/simulation.test.ts` (6 tests: state machine, single step, duplicate timer guard, auto-pause on max iterations, reset reproducibility, maximization negation)
-  - `src/__tests__/functionProblem.test.ts` (6 tests: scope mapping, expression validation, eval-free custom execution, benchmark evaluation, dimension constraints, per-variable bounds)
-  - `src/__tests__/visualizations.test.ts` (4 tests: 1D curve sampling, 2D contour grid generation, slice projection holding other dimensions fixed at $gbest$, safe variable percentage normalization)
-  - `src/__tests__/warehouseProblem.test.ts` (8 tests: Euclidean distance accuracy, $2K$ coordinate extraction, exact demand-weighted arithmetic $F$, problem definition $2K$ dimensions and alternating bounds, invalid inputs rejection, reproducible seeded customer generation, random demand range $[1, 10]$, multi-iteration PSO convergence minimizing total warehouse transport distance)
+  - `src/__tests__/visualizations.test.ts` (4 tests)
+  - `src/__tests__/pso.test.ts` (11 tests)
+  - `src/__tests__/simulation.test.ts` (6 tests)
+  - `src/__tests__/functionProblem.test.ts` (6 tests)
+  - `src/__tests__/warehouseProblem.test.ts` (8 tests)
+  - `src/__tests__/warehouseCanvas.test.ts` (5 tests)
+  - `src/__tests__/registries.test.ts` (9 tests)
+  - `src/__tests__/manualVerification.test.ts` (12 tests)
 - **ESLint**: Passed with 0 errors, 0 warnings (`eslint .`).
-- **Production Build**: Successfully compiled with `tsc -b && vite build`.
+- **Production Build**: Successfully compiled with `0 errors` (`tsc -b && vite build`).
 
 ---
 
-## Remaining Phases
-- **Phase 6**: Warehouse Optimizer Visualizations (Interactive HTML Canvas 2D spatial map rendering customer pins, warehouse icons, nearest-neighbor connection lines, and particle trajectory overlays).
-- **Phase 7**: Registries & Final Polish (dynamic registration, educational explanations, responsive polish, end-to-end tests).
+## Remaining Limitations & Future Expansion
+- **Future Algorithms**: The registry system is ready to receive Genetic Algorithms (GA) and Artificial Bee Colony (ABC).
+- **Canvas Zoom/Pan**: Warehouse canvas currently auto-scales to user-defined bounds $[X_{\min}, X_{\max}] \times [Y_{\min}, Y_{\max}]$; future iterations could include interactive pinch-to-zoom.

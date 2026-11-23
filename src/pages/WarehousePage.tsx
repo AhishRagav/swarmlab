@@ -1,12 +1,13 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import { psoFactory, defaultPSOConfig } from '@/algorithms/pso'
+import { algorithmRegistry } from '@/registries'
+import type { AlgorithmRegistration } from '@/registries/types'
 import type { PSOConfig, PSOState } from '@/algorithms/pso/types'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { SimulationControls } from '@/components/SimulationControls'
-import { ConvergenceChart } from '@/visualization/shared/ConvergenceChart'
+import { ConvergenceChart, WarehouseCanvas } from '@/visualization'
 import { createSimulationStore } from '@/simulation/store'
 import {
   createWarehouseProblem,
@@ -55,11 +56,16 @@ export default function WarehousePage() {
   const [manualY, setManualY] = useState<string>('50')
   const [manualDemand, setManualDemand] = useState<string>('1')
 
+  const psoEntry = useMemo(
+    () => algorithmRegistry.getOrThrow('pso') as AlgorithmRegistration<PSOState, PSOConfig>,
+    []
+  )
+
   // PSO configuration state
-  const [psoConfig, setPsoConfig] = useState<PSOConfig>({
-    ...defaultPSOConfig,
+  const [psoConfig, setPsoConfig] = useState<PSOConfig>(() => ({
+    ...(algorithmRegistry.getOrThrow('pso').defaultConfig as PSOConfig),
     swarmSize: 30,
-  })
+  }))
   const [maxIters, setMaxIters] = useState<number>(100)
   const [seedInput, setSeedInput] = useState<string>('42')
 
@@ -96,6 +102,19 @@ export default function WarehousePage() {
     setCustomers((prev) => [...prev, newCust])
   }
 
+  // Handle clicking directly on canvas to place customer in manual mode
+  const handleCanvasClick = (world: { x: number; y: number }) => {
+    if (placementMode !== 'manual') return
+    const demand = parseFloat(manualDemand) || 1
+    const newCust: Customer = {
+      id: `C${customers.length + 1}`,
+      x: world.x,
+      y: world.y,
+      demand,
+    }
+    setCustomers((prev) => [...prev, newCust])
+  }
+
   // Handle removing a customer
   const handleRemoveCustomer = (id: string) => {
     if (customers.length <= 1) {
@@ -125,14 +144,14 @@ export default function WarehousePage() {
     try {
       const seed = seedInput.trim() !== '' ? parseInt(seedInput, 10) : undefined
 
-      configure(psoFactory, warehouseProblem, psoConfig, {
+      configure(psoEntry.factory, warehouseProblem, psoConfig, {
         maxIterations: maxIters,
         seed: isNaN(seed as number) ? undefined : seed,
       })
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Error configuring warehouse problem.')
     }
-  }, [warehouseProblem, psoConfig, maxIters, seedInput, configure])
+  }, [warehouseProblem, psoEntry.factory, psoConfig, maxIters, seedInput, configure])
 
   // Initial configure on mount or when problem changes
   useEffect(() => {
@@ -627,6 +646,30 @@ export default function WarehousePage() {
             </Card>
           </div>
 
+          {/* Interactive 2D Warehouse Spatial Map */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center justify-between">
+                <span>Interactive 2D Spatial Warehouse Map</span>
+                <span className="text-xs font-normal text-muted-foreground">
+                  {placementMode === 'manual' ? 'Click canvas to add customer' : 'Hover over nodes for details'}
+                </span>
+              </CardTitle>
+              <CardDescription>
+                Visual representation of {customers.length} customer nodes, {warehouseCount} warehouse locations, and demand-weighted nearest assignments.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <WarehouseCanvas
+                customers={customers}
+                solution={solutionAnalysis}
+                bounds={bounds}
+                particles={algorithmState?.particles}
+                onCanvasClick={placementMode === 'manual' ? handleCanvasClick : undefined}
+              />
+            </CardContent>
+          </Card>
+
           {/* Optimized Warehouse Locations Card */}
           <Card>
             <CardHeader className="pb-3">
@@ -761,19 +804,6 @@ export default function WarehousePage() {
               )}
             </CardContent>
           </Card>
-
-          {/* Notice for Phase 6 Canvas Map Visualization */}
-          <div className="p-4 rounded-lg border border-dashed border-border bg-secondary/30 text-xs text-muted-foreground flex items-start gap-3">
-            <span className="text-base" role="presentation">
-              🗺️
-            </span>
-            <div>
-              <span className="font-semibold text-foreground block">
-                Canvas Map Visualization (Phase 6):
-              </span>
-              The mathematical warehouse placement optimizer is fully operational, dynamically calculating 2K-dimensional PSO solutions, demand-weighted distances, and optimal warehouse coordinates. In Phase 6, an interactive HTML Canvas 2D spatial map will be added to visually draw customer pins, warehouse icons, nearest-neighbor connection lines, and particle trajectory overlays.
-            </div>
-          </div>
         </div>
       </div>
     </div>

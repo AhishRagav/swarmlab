@@ -1,0 +1,68 @@
+import type { ProblemRegistration } from './types'
+import { createFunctionProblem } from '@/problems/function-optimizer/problem'
+import { createWarehouseProblem } from '@/problems/warehouse/problem'
+
+export class ProblemRegistry {
+  private registry = new Map<string, ProblemRegistration>()
+
+  register(entry: ProblemRegistration): void {
+    if (!entry.id || entry.id.trim() === '') {
+      throw new Error('Problem ID cannot be empty.')
+    }
+    if (this.registry.has(entry.id)) {
+      throw new Error(`Problem with ID "${entry.id}" is already registered.`)
+    }
+    this.registry.set(entry.id, entry)
+  }
+
+  get(id: string): ProblemRegistration | undefined {
+    return this.registry.get(id)
+  }
+
+  getOrThrow(id: string): ProblemRegistration {
+    const entry = this.get(id)
+    if (!entry) {
+      throw new Error(`Problem "${id}" not found in problem registry.`)
+    }
+    return entry
+  }
+
+  getAll(): ProblemRegistration[] {
+    return Array.from(this.registry.values())
+  }
+
+  has(id: string): boolean {
+    return this.registry.has(id)
+  }
+
+  clear(): void {
+    this.registry.clear()
+  }
+}
+
+// Global singleton instance
+export const problemRegistry = new ProblemRegistry()
+
+// Register built-in problems
+problemRegistry.register({
+  id: 'function-optimizer',
+  name: 'Mathematical Function Optimizer',
+  description:
+    'Continuous N-dimensional benchmark and custom mathematical function optimization (1 to 20 dimensions).',
+  category: 'continuous-function',
+  route: '/function-optimizer',
+  defaultDimensions: 2,
+  supportedDimensions: 'any',
+  createProblem: createFunctionProblem,
+})
+
+problemRegistry.register({
+  id: 'warehouse-optimizer',
+  name: 'Warehouse Placement Optimizer',
+  description:
+    'Optimizes 2D warehouse facilities to minimize demand-weighted Euclidean distances to distributed customers.',
+  category: 'facility-location',
+  route: '/warehouse',
+  defaultDimensions: 6, // 3 warehouses * 2 dimensions
+  createProblem: createWarehouseProblem,
+})

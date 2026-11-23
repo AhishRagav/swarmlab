@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import { psoFactory, defaultPSOConfig } from '@/algorithms/pso'
+import { algorithmRegistry } from '@/registries'
+import type { AlgorithmRegistration } from '@/registries/types'
 import type { PSOConfig, PSOState } from '@/algorithms/pso/types'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card'
@@ -56,8 +57,15 @@ export default function FunctionOptimizerPage() {
   const [uniformMin, setUniformMin] = useState<number>(-5.12)
   const [uniformMax, setUniformMax] = useState<number>(5.12)
 
+  const psoEntry = useMemo(
+    () => algorithmRegistry.getOrThrow('pso') as AlgorithmRegistration<PSOState, PSOConfig>,
+    []
+  )
+
   // PSO configuration state
-  const [psoConfig, setPsoConfig] = useState<PSOConfig>({ ...defaultPSOConfig })
+  const [psoConfig, setPsoConfig] = useState<PSOConfig>(() => ({
+    ...(algorithmRegistry.getOrThrow('pso').defaultConfig as PSOConfig),
+  }))
   const [maxIters, setMaxIters] = useState<number>(100)
   const [seedInput, setSeedInput] = useState<string>('42')
 
@@ -125,14 +133,14 @@ export default function FunctionOptimizerPage() {
     try {
       const seed = seedInput.trim() !== '' ? parseInt(seedInput, 10) : undefined
 
-      configure(psoFactory, currentProblem, psoConfig, {
+      configure(psoEntry.factory, currentProblem, psoConfig, {
         maxIterations: maxIters,
         seed: isNaN(seed as number) ? undefined : seed,
       })
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Error configuring problem.')
     }
-  }, [currentProblem, psoConfig, maxIters, seedInput, configure])
+  }, [currentProblem, psoEntry.factory, psoConfig, maxIters, seedInput, configure])
 
   // Configure once on initial mount
   useEffect(() => {
