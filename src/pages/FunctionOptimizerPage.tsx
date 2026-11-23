@@ -13,6 +13,14 @@ import {
 } from '@/problems/function-optimizer/problem'
 import { validateExpression } from '@/problems/function-optimizer/expression'
 import { createSimulationStore } from '@/simulation/store'
+import {
+  CurvePlot,
+  ContourPlot,
+  SurfacePlot,
+  ProjectionPlot,
+  VariableTable,
+  ConvergenceChart,
+} from '@/visualization'
 
 // Dedicated simulation store for the Function Optimizer page
 const useFunctionStore = createSimulationStore<PSOState, PSOConfig>()
@@ -95,12 +103,10 @@ export default function FunctionOptimizerPage() {
     setBounds(Array.from({ length: dimensions }, () => [uniformMin, uniformMax]))
   }
 
-  // Initialize or re-configure simulation
-  const applyConfiguration = useCallback(() => {
+  // Problem definition memoized for both simulation and visualization
+  const currentProblem = useMemo(() => {
     try {
-      const seed = seedInput.trim() !== '' ? parseInt(seedInput, 10) : undefined
-
-      const problem = createFunctionProblem({
+      return createFunctionProblem({
         mode,
         functionId,
         customExpression: customExpr,
@@ -108,15 +114,25 @@ export default function FunctionOptimizerPage() {
         bounds,
         objective,
       })
+    } catch {
+      return null
+    }
+  }, [mode, functionId, customExpr, dimensions, bounds, objective])
 
-      configure(psoFactory, problem, psoConfig, {
+  // Initialize or re-configure simulation
+  const applyConfiguration = useCallback(() => {
+    if (!currentProblem) return
+    try {
+      const seed = seedInput.trim() !== '' ? parseInt(seedInput, 10) : undefined
+
+      configure(psoFactory, currentProblem, psoConfig, {
         maxIterations: maxIters,
         seed: isNaN(seed as number) ? undefined : seed,
       })
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Error configuring problem.')
     }
-  }, [mode, functionId, customExpr, dimensions, bounds, objective, psoConfig, maxIters, seedInput, configure])
+  }, [currentProblem, psoConfig, maxIters, seedInput, configure])
 
   // Configure once on initial mount
   useEffect(() => {
@@ -721,19 +737,96 @@ export default function FunctionOptimizerPage() {
             </CardContent>
           </Card>
 
-          {/* Notice for Phase 4 Visualization Expansion */}
-          <div className="p-4 rounded-lg border border-dashed border-border bg-secondary/30 text-xs text-muted-foreground flex items-start gap-3">
-            <span className="text-base" role="presentation">
-              📊
-            </span>
-            <div>
-              <span className="font-semibold text-foreground block">
-                Visual Charts Preview (Phase 4):
-              </span>
-              The mathematical PSO engine and convergence calculations are running live.
-              In Phase 4, interactive 2D contour maps (N=2), 1D curves (N=1), 3D surfaces (N=3), 2D projections (N≥4), and convergence line charts will be added here using Plotly and Recharts.
-            </div>
-          </div>
+          {/* Interactive Objective Function & Swarm Visualization */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center justify-between">
+                <span>
+                  {dimensions === 1 && '1D Function Curve & Swarm Dynamics'}
+                  {dimensions === 2 && '2D Objective Landscape (Contour Plot)'}
+                  {dimensions === 3 && '3D Parameter Space Distribution'}
+                  {dimensions >= 4 && `Multi-Dimensional Projection (${dimensions}D Space)`}
+                </span>
+                <span className="text-xs font-normal text-muted-foreground">
+                  {dimensions}D Optimization
+                </span>
+              </CardTitle>
+              <CardDescription>
+                Live particle coordinates and global best (★) tracked directly on the actual mathematical objective surface.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {currentProblem ? (
+                <>
+                  {dimensions === 1 && (
+                    <CurvePlot
+                      bounds={bounds[0] ?? [-5.12, 5.12]}
+                      evaluate={currentProblem.evaluate}
+                      particles={algorithmState?.particles ?? []}
+                      gbest={algorithmState?.bestPosition ?? null}
+                    />
+                  )}
+                  {dimensions === 2 && (
+                    <ContourPlot
+                      bounds={bounds}
+                      evaluate={currentProblem.evaluate}
+                      particles={algorithmState?.particles ?? []}
+                      gbest={algorithmState?.bestPosition ?? null}
+                    />
+                  )}
+                  {dimensions === 3 && (
+                    <SurfacePlot
+                      bounds={bounds}
+                      evaluate={currentProblem.evaluate}
+                      particles={algorithmState?.particles ?? []}
+                      gbest={algorithmState?.bestPosition ?? null}
+                    />
+                  )}
+                  {dimensions >= 4 && (
+                    <div className="space-y-4">
+                      <ProjectionPlot
+                        dimensions={dimensions}
+                        bounds={bounds}
+                        evaluate={currentProblem.evaluate}
+                        particles={algorithmState?.particles ?? []}
+                        gbest={algorithmState?.bestPosition ?? null}
+                      />
+                      <VariableTable
+                        dimensions={dimensions}
+                        bounds={bounds}
+                        gbest={algorithmState?.bestPosition ?? null}
+                      />
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="p-8 text-center text-sm text-destructive">
+                  Invalid function configuration or expression.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Convergence History Chart */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center justify-between">
+                <span>Optimization Convergence Chart</span>
+                <span className="text-xs font-mono text-muted-foreground">
+                  {snapshot?.convergenceHistory?.length ?? 0} samples
+                </span>
+              </CardTitle>
+              <CardDescription>
+                Historical progress of the best objective value found by the swarm across iterations.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ConvergenceChart
+                history={snapshot?.convergenceHistory ?? []}
+                objectiveName={objective === 'minimize' ? 'Min Objective' : 'Max Objective'}
+              />
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

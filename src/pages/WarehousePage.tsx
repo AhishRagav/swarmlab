@@ -1,18 +1,780 @@
+import { useState, useEffect, useMemo, useCallback } from 'react'
+import { psoFactory, defaultPSOConfig } from '@/algorithms/pso'
+import type { PSOConfig, PSOState } from '@/algorithms/pso/types'
+import { Button } from '@/components/ui/Button'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card'
+import { Input } from '@/components/ui/Input'
+import { Select } from '@/components/ui/Select'
+import { SimulationControls } from '@/components/SimulationControls'
+import { ConvergenceChart } from '@/visualization/shared/ConvergenceChart'
+import { createSimulationStore } from '@/simulation/store'
+import {
+  createWarehouseProblem,
+  generateRandomCustomers,
+  analyzeWarehouseSolution,
+  DEFAULT_WAREHOUSE_BOUNDS,
+  type Customer,
+  type WarehouseBounds,
+  type CustomerPlacementMode,
+  type CustomerDemandMode,
+} from '@/problems/warehouse'
+
+// Dedicated simulation store for the Warehouse Placement page
+const useWarehouseStore = createSimulationStore<PSOState, PSOConfig>()
+
 export default function WarehousePage() {
+  const {
+    status,
+    iteration,
+    speed,
+    snapshot,
+    algorithmState,
+    maxIterations,
+    configure,
+    play,
+    pause,
+    step,
+    reset,
+    setSpeed,
+  } = useWarehouseStore()
+
+  // Problem configuration
+  const [warehouseCount, setWarehouseCount] = useState<number>(3)
+  const [customerCountInput, setCustomerCountInput] = useState<number>(20)
+  const [placementMode, setPlacementMode] = useState<CustomerPlacementMode>('random')
+  const [demandMode, setDemandMode] = useState<CustomerDemandMode>('equal')
+  const [bounds, setBounds] = useState<WarehouseBounds>({ ...DEFAULT_WAREHOUSE_BOUNDS })
+
+  // Customer population state
+  const [customers, setCustomers] = useState<Customer[]>(() =>
+    generateRandomCustomers(20, DEFAULT_WAREHOUSE_BOUNDS, 'equal', 1, 42)
+  )
+
+  // Manual customer input form
+  const [manualX, setManualX] = useState<string>('50')
+  const [manualY, setManualY] = useState<string>('50')
+  const [manualDemand, setManualDemand] = useState<string>('1')
+
+  // PSO configuration state
+  const [psoConfig, setPsoConfig] = useState<PSOConfig>({
+    ...defaultPSOConfig,
+    swarmSize: 30,
+  })
+  const [maxIters, setMaxIters] = useState<number>(100)
+  const [seedInput, setSeedInput] = useState<string>('42')
+
+  // Regenerate random customers
+  const handleRegenerateCustomers = useCallback(() => {
+    const seed = seedInput.trim() !== '' ? parseInt(seedInput, 10) : undefined
+    const newCustomers = generateRandomCustomers(
+      customerCountInput,
+      bounds,
+      demandMode === 'manual' ? 'equal' : demandMode,
+      1,
+      seed
+    )
+    setCustomers(newCustomers)
+  }, [customerCountInput, bounds, demandMode, seedInput])
+
+  // Handle adding customer manually
+  const handleAddManualCustomer = () => {
+    const x = parseFloat(manualX)
+    const y = parseFloat(manualY)
+    const demand = parseFloat(manualDemand)
+
+    if (isNaN(x) || isNaN(y) || isNaN(demand) || demand <= 0) {
+      alert('Please enter valid numeric coordinates and positive demand.')
+      return
+    }
+
+    const newCust: Customer = {
+      id: `C${customers.length + 1}`,
+      x,
+      y,
+      demand,
+    }
+    setCustomers((prev) => [...prev, newCust])
+  }
+
+  // Handle removing a customer
+  const handleRemoveCustomer = (id: string) => {
+    if (customers.length <= 1) {
+      alert('You must have at least one customer.')
+      return
+    }
+    setCustomers((prev) => prev.filter((c) => c.id !== id))
+  }
+
+  // Memoized warehouse problem definition
+  const warehouseProblem = useMemo(() => {
+    try {
+      if (customers.length === 0 || warehouseCount < 1) return null
+      return createWarehouseProblem({
+        customers,
+        warehouseCount,
+        bounds,
+      })
+    } catch {
+      return null
+    }
+  }, [customers, warehouseCount, bounds])
+
+  // Apply configuration to PSO engine
+  const applyConfiguration = useCallback(() => {
+    if (!warehouseProblem) return
+    try {
+      const seed = seedInput.trim() !== '' ? parseInt(seedInput, 10) : undefined
+
+      configure(psoFactory, warehouseProblem, psoConfig, {
+        maxIterations: maxIters,
+        seed: isNaN(seed as number) ? undefined : seed,
+      })
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Error configuring warehouse problem.')
+    }
+  }, [warehouseProblem, psoConfig, maxIters, seedInput, configure])
+
+  // Initial configure on mount or when problem changes
+  useEffect(() => {
+    applyConfiguration()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Real-time solution analysis
+  const solutionAnalysis = useMemo(() => {
+    if (!algorithmState?.bestPosition || algorithmState.bestPosition.length === 0) {
+      return null
+    }
+    return analyzeWarehouseSolution(customers, algorithmState.bestPosition)
+  }, [customers, algorithmState])
+
+  // Summary statistics
+  const currentCost = algorithmState?.bestObjective
+  const initialCost = snapshot?.convergenceHistory[0]?.objectiveValue
+  const costReduction =
+    initialCost !== undefined && currentCost !== undefined && initialCost > 0
+      ? (((initialCost - currentCost) / initialCost) * 100).toFixed(2)
+      : '0.00'
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {/* Page Title */}
       <div>
-        <h1 className="text-3xl font-bold">Warehouse Placement Optimizer</h1>
-        <p className="text-muted-foreground mt-2">
-          Find optimal warehouse locations to minimize demand-weighted customer
-          distances. Configure customers, warehouses, and PSO parameters.
+        <h1 className="text-3xl font-bold tracking-tight">Warehouse Placement Optimizer</h1>
+        <p className="text-muted-foreground mt-1">
+          Optimize 2D warehouse locations for {customers.length} customer nodes to minimize demand-weighted
+          distances using Particle Swarm Optimization.
         </p>
       </div>
 
-      <div className="rounded-lg border border-border bg-card p-8 text-center text-muted-foreground">
-        <p>
-          Warehouse optimizer will be implemented in Phase 5.
-        </p>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Left Column: Problem Setup & PSO Parameters */}
+        <div className="lg:col-span-5 space-y-6">
+          {/* Warehouse & Customer Setup Card */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Warehouse Problem Configuration</CardTitle>
+              <CardDescription>
+                Configure warehouse capacity, customer nodes, and demand distribution.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold uppercase text-muted-foreground block mb-1">
+                    Warehouses (K)
+                  </label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={10}
+                    value={warehouseCount}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value, 10) || 1
+                      setWarehouseCount(Math.max(1, Math.min(10, val)))
+                    }}
+                  />
+                  <span className="text-[10px] text-muted-foreground">
+                    Dimensionality: {warehouseCount * 2} variables (2K)
+                  </span>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold uppercase text-muted-foreground block mb-1">
+                    Customers (M)
+                  </label>
+                  <Input
+                    type="number"
+                    min={2}
+                    max={100}
+                    value={customerCountInput}
+                    disabled={placementMode === 'manual'}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value, 10) || 5
+                      setCustomerCountInput(Math.max(2, Math.min(100, val)))
+                    }}
+                  />
+                  <span className="text-[10px] text-muted-foreground">
+                    Current active: {customers.length}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold uppercase text-muted-foreground block mb-1">
+                    Placement Mode
+                  </label>
+                  <Select
+                    value={placementMode}
+                    onChange={(e) => setPlacementMode(e.target.value as CustomerPlacementMode)}
+                    options={[
+                      { value: 'random', label: 'Random Placement' },
+                      { value: 'manual', label: 'Manual Coordinates' },
+                    ]}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold uppercase text-muted-foreground block mb-1">
+                    Demand Mode
+                  </label>
+                  <Select
+                    value={demandMode}
+                    onChange={(e) => {
+                      const mode = e.target.value as CustomerDemandMode
+                      setDemandMode(mode)
+                      if (mode === 'equal') {
+                        setCustomers((prev) => prev.map((c) => ({ ...c, demand: 1 })))
+                      } else if (mode === 'random') {
+                        setCustomers((prev) =>
+                          prev.map((c) => ({
+                            ...c,
+                            demand: Math.floor(Math.random() * 10) + 1,
+                          }))
+                        )
+                      }
+                    }}
+                    options={[
+                      { value: 'equal', label: 'Equal Demand (1.0)' },
+                      { value: 'random', label: 'Random Demand (1–10)' },
+                      { value: 'manual', label: 'Custom Demand' },
+                    ]}
+                  />
+                </div>
+              </div>
+
+              {/* Area Bounds */}
+              <div className="p-3 bg-secondary/30 rounded-md border border-border space-y-2">
+                <span className="text-xs font-semibold uppercase text-muted-foreground block">
+                  Search Coordinate Bounds
+                </span>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[11px] text-muted-foreground block mb-0.5">
+                      X Bounds [min, max]
+                    </label>
+                    <div className="flex items-center gap-1.5 font-mono text-xs">
+                      <Input
+                        type="number"
+                        value={bounds.minX}
+                        onChange={(e) =>
+                          setBounds((b) => ({ ...b, minX: parseFloat(e.target.value) || 0 }))
+                        }
+                      />
+                      <span>to</span>
+                      <Input
+                        type="number"
+                        value={bounds.maxX}
+                        onChange={(e) =>
+                          setBounds((b) => ({ ...b, maxX: parseFloat(e.target.value) || 100 }))
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] text-muted-foreground block mb-0.5">
+                      Y Bounds [min, max]
+                    </label>
+                    <div className="flex items-center gap-1.5 font-mono text-xs">
+                      <Input
+                        type="number"
+                        value={bounds.minY}
+                        onChange={(e) =>
+                          setBounds((b) => ({ ...b, minY: parseFloat(e.target.value) || 0 }))
+                        }
+                      />
+                      <span>to</span>
+                      <Input
+                        type="number"
+                        value={bounds.maxY}
+                        onChange={(e) =>
+                          setBounds((b) => ({ ...b, maxY: parseFloat(e.target.value) || 100 }))
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Customer Actions */}
+              {placementMode === 'random' ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-xs font-medium"
+                  onClick={handleRegenerateCustomers}
+                >
+                  Regenerate Random Customers
+                </Button>
+              ) : (
+                <div className="p-3 bg-secondary/30 rounded-md border border-border space-y-2">
+                  <span className="text-xs font-semibold uppercase text-muted-foreground block">
+                    Add Manual Customer
+                  </span>
+                  <div className="grid grid-cols-3 gap-2">
+                    <Input
+                      type="number"
+                      placeholder="X"
+                      value={manualX}
+                      onChange={(e) => setManualX(e.target.value)}
+                    />
+                    <Input
+                      type="number"
+                      placeholder="Y"
+                      value={manualY}
+                      onChange={(e) => setManualY(e.target.value)}
+                    />
+                    <Input
+                      type="number"
+                      placeholder="Demand"
+                      value={manualDemand}
+                      onChange={(e) => setManualDemand(e.target.value)}
+                    />
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full text-xs"
+                    onClick={handleAddManualCustomer}
+                  >
+                    Add Customer
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* PSO Swarm Parameters Card */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">PSO Algorithm Parameters</CardTitle>
+              <CardDescription>
+                Configure swarm behavior, acceleration coefficients, and execution options.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold uppercase text-muted-foreground block mb-1">
+                    Swarm Size
+                  </label>
+                  <Input
+                    type="number"
+                    min={5}
+                    max={200}
+                    value={psoConfig.swarmSize}
+                    onChange={(e) =>
+                      setPsoConfig((p) => ({
+                        ...p,
+                        swarmSize: parseInt(e.target.value, 10) || 10,
+                      }))
+                    }
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold uppercase text-muted-foreground block mb-1">
+                    Max Iterations
+                  </label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={2000}
+                    value={maxIters}
+                    onChange={(e) => setMaxIters(parseInt(e.target.value, 10) || 50)}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="text-xs font-semibold uppercase text-muted-foreground block mb-1">
+                    Inertia (w)
+                  </label>
+                  <Input
+                    type="number"
+                    step={0.05}
+                    value={psoConfig.w}
+                    disabled={psoConfig.inertiaMode === 'linear-decrease'}
+                    onChange={(e) =>
+                      setPsoConfig((p) => ({ ...p, w: parseFloat(e.target.value) || 0 }))
+                    }
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold uppercase text-muted-foreground block mb-1">
+                    Cognitive (c1)
+                  </label>
+                  <Input
+                    type="number"
+                    step={0.05}
+                    value={psoConfig.c1}
+                    onChange={(e) =>
+                      setPsoConfig((p) => ({ ...p, c1: parseFloat(e.target.value) || 0 }))
+                    }
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold uppercase text-muted-foreground block mb-1">
+                    Social (c2)
+                  </label>
+                  <Input
+                    type="number"
+                    step={0.05}
+                    value={psoConfig.c2}
+                    onChange={(e) =>
+                      setPsoConfig((p) => ({ ...p, c2: parseFloat(e.target.value) || 0 }))
+                    }
+                  />
+                </div>
+              </div>
+
+              {/* Syllabus-aligned Advanced Controls */}
+              <div className="pt-2 border-t border-border space-y-3">
+                <span className="text-xs font-semibold uppercase text-muted-foreground block">
+                  Syllabus Execution Options
+                </span>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-muted-foreground block mb-1">
+                      Initial Velocity
+                    </label>
+                    <Select
+                      value={psoConfig.initialVelocityMode ?? 'zero'}
+                      onChange={(e) =>
+                        setPsoConfig((prev) => ({
+                          ...prev,
+                          initialVelocityMode: e.target.value as 'zero' | 'random',
+                        }))
+                      }
+                      options={[
+                        { value: 'zero', label: 'Zero (Default)' },
+                        { value: 'random', label: 'Random (±10%)' },
+                      ]}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs text-muted-foreground block mb-1">
+                      Boundary Handling
+                    </label>
+                    <Select
+                      value={psoConfig.boundaryHandling ?? 'clipping'}
+                      onChange={(e) =>
+                        setPsoConfig((prev) => ({
+                          ...prev,
+                          boundaryHandling: e.target.value as 'clipping' | 'absorb',
+                        }))
+                      }
+                      options={[
+                        { value: 'clipping', label: 'Position Clipping' },
+                        { value: 'absorb', label: 'Absorb (Zero V)' },
+                      ]}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-muted-foreground block mb-1">
+                      Inertia Schedule
+                    </label>
+                    <Select
+                      value={psoConfig.inertiaMode ?? 'fixed'}
+                      onChange={(e) =>
+                        setPsoConfig((prev) => ({
+                          ...prev,
+                          inertiaMode: e.target.value as 'fixed' | 'linear-decrease',
+                        }))
+                      }
+                      options={[
+                        { value: 'fixed', label: 'Fixed (w)' },
+                        { value: 'linear-decrease', label: 'Linear (0.9 → 0.4)' },
+                      ]}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs text-muted-foreground block mb-1">
+                      Velocity Clamp (Vmax)
+                    </label>
+                    <div className="flex items-center gap-1.5">
+                      <Input
+                        type="number"
+                        min={1}
+                        max={100}
+                        step={5}
+                        value={Math.round((psoConfig.velocityClampRatio ?? 0.2) * 100)}
+                        onChange={(e) => {
+                          const pct = parseFloat(e.target.value) || 20
+                          setPsoConfig((prev) => ({
+                            ...prev,
+                            velocityClampRatio: Math.max(0.01, pct / 100),
+                          }))
+                        }}
+                      />
+                      <span className="text-xs text-muted-foreground font-mono">%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold uppercase text-muted-foreground block mb-1">
+                  Random Seed (Optional)
+                </label>
+                <Input
+                  type="text"
+                  placeholder="e.g. 42"
+                  value={seedInput}
+                  onChange={(e) => setSeedInput(e.target.value)}
+                />
+              </div>
+
+              <Button
+                variant="default"
+                className="w-full font-semibold"
+                onClick={applyConfiguration}
+                disabled={status === 'running' || !warehouseProblem}
+              >
+                Apply & Reset Swarm
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right Column: Controls, Results, and Analysis */}
+        <div className="lg:col-span-7 space-y-6">
+          {/* Simulation Controls Bar */}
+          <SimulationControls
+            status={status}
+            iteration={iteration}
+            maxIterations={maxIterations}
+            speed={speed}
+            onPlay={play}
+            onPause={pause}
+            onStep={step}
+            onReset={reset}
+            onSpeedChange={setSpeed}
+          />
+
+          {/* Solution Metrics Summary */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Card>
+              <CardContent className="p-4 space-y-1">
+                <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                  Total Cost (Distance)
+                </span>
+                <div className="text-2xl font-bold font-mono text-primary truncate">
+                  {currentCost !== undefined ? currentCost.toFixed(2) : '—'}
+                </div>
+                <div className="text-[11px] text-muted-foreground">
+                  Demand-weighted sum F
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4 space-y-1">
+                <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                  Cost Reduction
+                </span>
+                <div className="text-2xl font-bold font-mono text-emerald-600 dark:text-emerald-400">
+                  {costReduction}%
+                </div>
+                <div className="text-[11px] text-muted-foreground">
+                  Initial: {initialCost !== undefined ? initialCost.toFixed(2) : '—'}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4 space-y-1">
+                <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                  Network Scale
+                </span>
+                <div className="text-2xl font-bold font-mono text-foreground">
+                  {warehouseCount} Wh / {customers.length} Cust
+                </div>
+                <div className="text-[11px] text-muted-foreground">
+                  {psoConfig.swarmSize} particles ({warehouseCount * 2}D)
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Optimized Warehouse Locations Card */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center justify-between">
+                <span>Optimized Warehouse Coordinates (gbest)</span>
+                <span className="text-xs font-normal text-muted-foreground">
+                  {warehouseCount} Warehouses
+                </span>
+              </CardTitle>
+              <CardDescription>
+                Current best positions and customer allocation summary.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {solutionAnalysis ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                  {solutionAnalysis.warehouses.map((wh) => (
+                    <div
+                      key={wh.index}
+                      className="p-3 bg-secondary/40 rounded-lg border border-border space-y-1"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-foreground">
+                          Warehouse #{wh.index + 1}
+                        </span>
+                        <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded font-mono">
+                          {wh.assignedCustomers} customers
+                        </span>
+                      </div>
+                      <div className="text-xs font-mono text-muted-foreground">
+                        Coords: ({wh.x.toFixed(2)}, {wh.y.toFixed(2)})
+                      </div>
+                      <div className="text-[11px] text-muted-foreground">
+                        Total Demand: <span className="font-semibold text-foreground font-mono">{wh.totalDemandServed.toFixed(1)}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Swarm not yet initialized.</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Convergence History Chart */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center justify-between">
+                <span>Warehouse Cost Convergence</span>
+                <span className="text-xs font-mono text-muted-foreground">
+                  {snapshot?.convergenceHistory?.length ?? 0} iterations
+                </span>
+              </CardTitle>
+              <CardDescription>
+                Progress of the minimal demand-weighted total distance found by the swarm.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ConvergenceChart
+                history={snapshot?.convergenceHistory ?? []}
+                objectiveName="Demand-Weighted Distance"
+              />
+            </CardContent>
+          </Card>
+
+          {/* Customer Assignment Table Card */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center justify-between">
+                <span>Customer Assignment & Distance Breakdown</span>
+                <span className="text-xs font-normal text-muted-foreground">
+                  Showing {customers.length} customer nodes
+                </span>
+              </CardTitle>
+              <CardDescription>
+                Detailed customer locations, nearest warehouse assignment, and weighted transport costs.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {solutionAnalysis ? (
+                <div className="max-h-72 overflow-y-auto border border-border rounded-md">
+                  <table className="w-full text-xs text-left border-collapse">
+                    <thead className="bg-secondary/60 text-muted-foreground sticky top-0 font-medium">
+                      <tr>
+                        <th className="py-2 px-3">Customer</th>
+                        <th className="py-2 px-3">Location (X, Y)</th>
+                        <th className="py-2 px-3">Demand</th>
+                        <th className="py-2 px-3">Assigned Warehouse</th>
+                        <th className="py-2 px-3">Euclidean Dist</th>
+                        <th className="py-2 px-3">Weighted Cost</th>
+                        {placementMode === 'manual' && <th className="py-2 px-3">Action</th>}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border font-mono">
+                      {solutionAnalysis.assignments.map((asgn) => (
+                        <tr key={asgn.customerId} className="hover:bg-accent/30">
+                          <td className="py-1.5 px-3 font-semibold text-foreground">
+                            {asgn.customerId}
+                          </td>
+                          <td className="py-1.5 px-3 text-muted-foreground">
+                            ({asgn.customerX.toFixed(1)}, {asgn.customerY.toFixed(1)})
+                          </td>
+                          <td className="py-1.5 px-3 text-foreground">{asgn.demand}</td>
+                          <td className="py-1.5 px-3 font-semibold text-primary">
+                            Warehouse #{asgn.nearestWarehouseIndex + 1}
+                          </td>
+                          <td className="py-1.5 px-3 text-muted-foreground">
+                            {asgn.distance.toFixed(2)}
+                          </td>
+                          <td className="py-1.5 px-3 font-medium text-foreground">
+                            {asgn.weightedDistance.toFixed(2)}
+                          </td>
+                          {placementMode === 'manual' && (
+                            <td className="py-1.5 px-3">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 px-2 text-[10px] text-destructive hover:bg-destructive/10"
+                                onClick={() => handleRemoveCustomer(asgn.customerId)}
+                              >
+                                Delete
+                              </Button>
+                            </td>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No customer assignment data available.</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Notice for Phase 6 Canvas Map Visualization */}
+          <div className="p-4 rounded-lg border border-dashed border-border bg-secondary/30 text-xs text-muted-foreground flex items-start gap-3">
+            <span className="text-base" role="presentation">
+              🗺️
+            </span>
+            <div>
+              <span className="font-semibold text-foreground block">
+                Canvas Map Visualization (Phase 6):
+              </span>
+              The mathematical warehouse placement optimizer is fully operational, dynamically calculating 2K-dimensional PSO solutions, demand-weighted distances, and optimal warehouse coordinates. In Phase 6, an interactive HTML Canvas 2D spatial map will be added to visually draw customer pins, warehouse icons, nearest-neighbor connection lines, and particle trajectory overlays.
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )
