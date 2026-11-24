@@ -57,15 +57,19 @@ All three optimizers use Particle Swarm Optimization.
 
 The velocity update equation is:
 
-\[
+$$
+
 v_i(t+1)=wv_i(t)+c_1r_1(pbest_i-x_i(t))+c_2r_2(gbest-x_i(t))
-\]
+
+$$
 
 The position update equation is:
 
-\[
+$$
+
 x_i(t+1)=x_i(t)+v_i(t+1)
-\]
+
+$$
 
 The application allows users to experiment with:
 
