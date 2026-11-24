@@ -166,6 +166,37 @@ SwarmLab is an interactive educational platform for optimization algorithms, bui
 - **Documentation**:
   - Completely rewritten `README.md` with features, setup, user guide, architecture breakdown, and step-by-step developer guide for adding algorithms and problems.
 
+### Visual Identity & Engineering Dashboard Theme (Completed)
+- **Graphite + Amber Professional Engineering Theme**:
+  - Replaced the monochromatic cyan theme with a dedicated professional engineering dashboard palette:
+    - Main Background: `#111315`
+    - Secondary Background: `#191D21`
+    - Card/Surface Background: `#242A30` (visually distinct surface elevation)
+    - Primary Accent: `#F59E0B` (Amber)
+    - Secondary Accent: `#FBBF24` (Light Amber)
+    - Main Text: `#F5F5F4`
+    - Muted Text: `#A1A1AA`
+    - Borders: `#3F454D`
+    - Status Indicators: `#22C55E` (Success), `#F59E0B` (Warning), `#EF4444` (Error)
+  - **Light Theme**: Properly balanced warm off-white background (`#fafaf9`), warm graphite text (`#1c1917`), and amber accents (`#d97706` / `#f59e0b`).
+  - **High Text Contrast & Readability**: Complies with accessibility standards across inputs, badges, cards, navigation items, and tables.
+  - **Visualizations Updated**:
+    - Recharts Convergence Chart with primary amber line (`#f59e0b`), amber dots (`#fbbf24`), and dark graphite tooltip card (`#242a30`).
+    - 1D Curve Plot with amber objective line (`#f59e0b`), high-contrast swarm particles, and glowing amber global-best star marker (`#f59e0b`).
+    - 2D Contour, 3D Surface, and N-D Projection plots with coordinated dark graphite axes, borders, and amber highlights.
+    - 2D Warehouse Canvas with deep graphite canvas backgrounds (`#111315` / `#191d21`), graphite grid borders (`#3f454d`), and distinct customer/warehouse palettes.
+  - **Simulation Speed Slider**: High-contrast two-tone track with dynamic amber active progress fill and amber circular thumb with hover/focus states.
+- **Function Optimizer Swarm Table & UI**:
+  - Removed 5-particle truncation limit: displays *every* particle in the swarm.
+  - Lists Particle ID, Position vector, Evaluated Objective Value, Personal Best, and Velocity Norm ($||v||$).
+  - Vertically scrollable table (`max-h-80 overflow-y-auto`) with a sticky header.
+  - Cleaned execution options section: renamed to "Execution Options" with streamlined labels ("Zero", "Position Clipping").
+- **Warehouse Optimizer Simplification**:
+  - Standardized customer demand to equal demand = 1 for all customers across both manual and random placement modes.
+  - Removed redundant Demand Mode dropdown; placement mode selector now takes full width.
+  - Simplified manual customer entry to X and Y coordinates only.
+  - Streamlined objective calculation ($F = \sum \min \text{dist}$), assignment tables, and warehouse summaries.
+
 ---
 
 ## Test Results

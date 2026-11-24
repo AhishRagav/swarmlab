@@ -21,7 +21,7 @@ export const WAREHOUSE_COLORS = [
   { main: '#f59e0b', light: '#fcd34d', bg: 'rgba(245, 158, 11, 0.15)', line: 'rgba(245, 158, 11, 0.45)' }, // Amber
   { main: '#8b5cf6', light: '#c4b5fd', bg: 'rgba(139, 92, 246, 0.15)', line: 'rgba(139, 92, 246, 0.45)' }, // Violet
   { main: '#ec4899', light: '#f9a8d4', bg: 'rgba(236, 72, 153, 0.15)', line: 'rgba(236, 72, 153, 0.45)' }, // Pink
-  { main: '#06b6d4', light: '#67e8f9', bg: 'rgba(6, 182, 212, 0.15)', line: 'rgba(6, 182, 212, 0.45)' }, // Cyan
+  { main: '#0ea5e9', light: '#7dd3fc', bg: 'rgba(14, 165, 233, 0.15)', line: 'rgba(14, 165, 233, 0.45)' }, // Sky
   { main: '#f97316', light: '#fdba74', bg: 'rgba(249, 115, 22, 0.15)', line: 'rgba(249, 115, 22, 0.45)' }, // Orange
   { main: '#14b8a6', light: '#5eead4', bg: 'rgba(20, 184, 166, 0.15)', line: 'rgba(20, 184, 166, 0.45)' }, // Teal
   { main: '#a855f7', light: '#d8b4fe', bg: 'rgba(168, 85, 247, 0.15)', line: 'rgba(168, 85, 247, 0.45)' }, // Purple
@@ -103,19 +103,19 @@ export function drawGridAndAxes(
   ctx.save()
 
   // Clean background
-  ctx.fillStyle = '#0b1120'
+  ctx.fillStyle = '#111315'
   ctx.fillRect(0, 0, width, height)
 
   // Plot area background
-  ctx.fillStyle = '#0f172a'
+  ctx.fillStyle = '#191d21'
   ctx.fillRect(padding.left, padding.top, plotWidth, plotHeight)
 
   // Grid lines
   const gridSteps = 5
-  ctx.strokeStyle = '#1e293b'
+  ctx.strokeStyle = '#2a3038'
   ctx.lineWidth = 1
   ctx.setLineDash([3, 3])
-  ctx.fillStyle = '#64748b'
+  ctx.fillStyle = '#a1a1aa'
   ctx.font = '10px monospace'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
@@ -151,12 +151,12 @@ export function drawGridAndAxes(
 
   // Plot border
   ctx.setLineDash([])
-  ctx.strokeStyle = '#334155'
+  ctx.strokeStyle = '#3f454d'
   ctx.lineWidth = 1.5
   ctx.strokeRect(padding.left, padding.top, plotWidth, plotHeight)
 
   // Axis Title Labels
-  ctx.fillStyle = '#94a3b8'
+  ctx.fillStyle = '#a1a1aa'
   ctx.font = '11px sans-serif'
   ctx.textAlign = 'center'
   ctx.fillText('X Coordinate', padding.left + plotWidth / 2, height - 10)
@@ -314,10 +314,10 @@ export function drawWarehouses(
     ctx.textBaseline = 'middle'
     ctx.fillText(`W${wh.index + 1}`, pos.x, pos.y)
 
-    // Sub-badge: customers served and total demand
+    // Sub-badge: customers served
     ctx.font = '9px monospace'
     ctx.fillStyle = color.light
-    ctx.fillText(`(${wh.assignedCustomers}c, ${wh.totalDemandServed.toFixed(0)}d)`, pos.x, pos.y + half + 10)
+    ctx.fillText(`(${wh.assignedCustomers} customers)`, pos.x, pos.y + half + 10)
   }
 
   ctx.restore()

@@ -154,7 +154,7 @@ export function WarehouseCanvas({
           if (Math.hypot(pt.x - mouseX, pt.y - mouseY) <= 16) {
             setHoverInfo({
               text: `Warehouse #${wh.index + 1}`,
-              subtext: `Coords: (${wh.x.toFixed(1)}, ${wh.y.toFixed(1)}) | Served: ${wh.assignedCustomers} customers (${wh.totalDemandServed.toFixed(1)} demand)`,
+              subtext: `Coords: (${wh.x.toFixed(1)}, ${wh.y.toFixed(1)}) | Served: ${wh.assignedCustomers} customers`,
               x: mouseX,
               y: mouseY,
             })
@@ -171,9 +171,9 @@ export function WarehouseCanvas({
           const asgn = solution?.assignments.find((a) => a.customerId === c.id)
           setHoverInfo({
             text: `Customer ${c.id}`,
-            subtext: `Coords: (${c.x.toFixed(1)}, ${c.y.toFixed(1)}) | Demand: ${c.demand}${
+            subtext: `Coords: (${c.x.toFixed(1)}, ${c.y.toFixed(1)})${
               asgn
-                ? ` → Warehouse #${asgn.nearestWarehouseIndex + 1} (dist: ${asgn.distance.toFixed(1)}, cost: ${asgn.weightedDistance.toFixed(1)})`
+                ? ` → Warehouse #${asgn.nearestWarehouseIndex + 1} (dist: ${asgn.distance.toFixed(1)})`
                 : ''
             }`,
             x: mouseX,
@@ -219,7 +219,7 @@ export function WarehouseCanvas({
   return (
     <div className={`space-y-3 ${className ?? ''}`} ref={containerRef}>
       {/* Canvas Viewport Container */}
-      <div className="relative border border-border rounded-lg overflow-hidden shadow-inner bg-slate-950 flex justify-center">
+      <div className="relative border border-border rounded-lg overflow-hidden shadow-inner bg-[#111315] flex justify-center">
         <canvas
           ref={canvasRef}
           onMouseMove={handleMouseMove}
@@ -231,7 +231,7 @@ export function WarehouseCanvas({
         {/* Hover Tooltip Overlay */}
         {hoverInfo && (
           <div
-            className="absolute pointer-events-none bg-slate-900/95 border border-slate-700 text-slate-100 px-2.5 py-1.5 rounded-md text-xs shadow-xl backdrop-blur-sm z-20 transform -translate-x-1/2 -translate-y-full mb-2"
+            className="absolute pointer-events-none bg-[#242a30]/95 border border-border text-foreground px-2.5 py-1.5 rounded-md text-xs shadow-xl backdrop-blur-sm z-20 transform -translate-x-1/2 -translate-y-full mb-2"
             style={{
               left: `${Math.max(100, Math.min(dimensions.width - 100, hoverInfo.x))}px`,
               top: `${Math.max(45, hoverInfo.y - 12)}px`,
@@ -239,7 +239,7 @@ export function WarehouseCanvas({
           >
             <div className="font-semibold text-primary">{hoverInfo.text}</div>
             {hoverInfo.subtext && (
-              <div className="text-[11px] text-slate-300 font-mono mt-0.5 whitespace-nowrap">
+              <div className="text-[11px] text-muted-foreground font-mono mt-0.5 whitespace-nowrap">
                 {hoverInfo.subtext}
               </div>
             )}
@@ -248,14 +248,14 @@ export function WarehouseCanvas({
 
         {/* HUD Stats in Top Corner */}
         {solution && (
-          <div className="absolute top-3 right-3 bg-slate-900/80 border border-slate-800 text-[11px] font-mono px-2.5 py-1.5 rounded backdrop-blur-sm text-slate-300 space-y-0.5 pointer-events-none">
+          <div className="absolute top-3 right-3 bg-[#242a30]/90 border border-border text-[11px] font-mono px-2.5 py-1.5 rounded backdrop-blur-sm text-foreground space-y-0.5 pointer-events-none">
             <div className="flex items-center gap-2">
-              <span className="text-muted-foreground">Total Transport Cost:</span>
+              <span className="text-muted-foreground">Total Transport Distance:</span>
               <span className="font-bold text-primary text-xs">
                 {solution.objectiveValue.toFixed(2)}
               </span>
             </div>
-            <div className="text-[10px] text-slate-400">
+            <div className="text-[10px] text-muted-foreground">
               {solution.warehouses.length} Wh / {customers.length} Customers
             </div>
           </div>
@@ -269,15 +269,15 @@ export function WarehouseCanvas({
             Legend:
           </span>
           <div className="flex items-center gap-1.5">
-            <div className="w-3.5 h-3.5 rounded-full bg-slate-500 border border-white" />
-            <span className="text-muted-foreground">Customer (radius ∝ demand)</span>
+            <div className="w-3.5 h-3.5 rounded-full bg-[#71717a] border border-white" />
+            <span className="text-muted-foreground">Customer (equal demand = 1)</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="w-3.5 h-3.5 rounded bg-blue-500 border border-white" />
+            <div className="w-3.5 h-3.5 rounded bg-primary border border-white" />
             <span className="text-muted-foreground">Warehouse (W#)</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="w-4 h-0 border-t border-dashed border-slate-400" />
+            <div className="w-4 h-0 border-t border-dashed border-[#a1a1aa]" />
             <span className="text-muted-foreground">Nearest Assignment</span>
           </div>
         </div>

@@ -125,20 +125,20 @@ export function ContourPlot({ bounds, evaluate, particles, gbest, className }: C
   }
 
   const layout: Partial<Plotly.Layout> = {
-    title: { text: '2D Contour Map & Swarm Positions', font: { size: 14, color: '#f8fafc' } },
+    title: { text: '2D Contour Map & Swarm Positions', font: { size: 14, color: '#f5f5f4' } },
     xaxis: {
-      title: { text: 'x₁', font: { size: 12, color: '#94a3b8' } },
+      title: { text: 'x₁', font: { size: 12, color: '#a1a1aa' } },
       range: [b0[0], b0[1]],
-      gridcolor: '#334155',
-      zerolinecolor: '#475569',
+      gridcolor: '#3f454d',
+      zerolinecolor: '#525b66',
     },
     yaxis: {
-      title: { text: 'x₂', font: { size: 12, color: '#94a3b8' } },
+      title: { text: 'x₂', font: { size: 12, color: '#a1a1aa' } },
       range: [b1[0], b1[1]],
-      gridcolor: '#334155',
-      zerolinecolor: '#475569',
+      gridcolor: '#3f454d',
+      zerolinecolor: '#525b66',
     },
-    legend: { orientation: 'h', y: -0.2, font: { color: '#94a3b8', size: 11 } },
+    legend: { orientation: 'h', y: -0.2, font: { color: '#a1a1aa', size: 11 } },
   }
 
   return (

@@ -17,7 +17,6 @@ import {
   type Customer,
   type WarehouseBounds,
   type CustomerPlacementMode,
-  type CustomerDemandMode,
 } from '@/problems/warehouse'
 
 // Dedicated simulation store for the Warehouse Placement page
@@ -43,18 +42,16 @@ export default function WarehousePage() {
   const [warehouseCount, setWarehouseCount] = useState<number>(3)
   const [customerCountInput, setCustomerCountInput] = useState<number>(20)
   const [placementMode, setPlacementMode] = useState<CustomerPlacementMode>('random')
-  const [demandMode, setDemandMode] = useState<CustomerDemandMode>('equal')
   const [bounds, setBounds] = useState<WarehouseBounds>({ ...DEFAULT_WAREHOUSE_BOUNDS })
 
-  // Customer population state
+  // Customer population state (all customers have equal demand = 1)
   const [customers, setCustomers] = useState<Customer[]>(() =>
-    generateRandomCustomers(20, DEFAULT_WAREHOUSE_BOUNDS, 'equal', 1, 42)
+    generateRandomCustomers(20, DEFAULT_WAREHOUSE_BOUNDS, 42)
   )
 
   // Manual customer input form
   const [manualX, setManualX] = useState<string>('50')
   const [manualY, setManualY] = useState<string>('50')
-  const [manualDemand, setManualDemand] = useState<string>('1')
 
   const psoEntry = useMemo(
     () => algorithmRegistry.getOrThrow('pso') as AlgorithmRegistration<PSOState, PSOConfig>,
@@ -75,21 +72,18 @@ export default function WarehousePage() {
     const newCustomers = generateRandomCustomers(
       customerCountInput,
       bounds,
-      demandMode === 'manual' ? 'equal' : demandMode,
-      1,
       seed
     )
     setCustomers(newCustomers)
-  }, [customerCountInput, bounds, demandMode, seedInput])
+  }, [customerCountInput, bounds, seedInput])
 
   // Handle adding customer manually
   const handleAddManualCustomer = () => {
     const x = parseFloat(manualX)
     const y = parseFloat(manualY)
-    const demand = parseFloat(manualDemand)
 
-    if (isNaN(x) || isNaN(y) || isNaN(demand) || demand <= 0) {
-      alert('Please enter valid numeric coordinates and positive demand.')
+    if (isNaN(x) || isNaN(y)) {
+      alert('Please enter valid numeric coordinates.')
       return
     }
 
@@ -97,7 +91,7 @@ export default function WarehousePage() {
       id: `C${customers.length + 1}`,
       x,
       y,
-      demand,
+      demand: 1,
     }
     setCustomers((prev) => [...prev, newCust])
   }
@@ -105,12 +99,11 @@ export default function WarehousePage() {
   // Handle clicking directly on canvas to place customer in manual mode
   const handleCanvasClick = (world: { x: number; y: number }) => {
     if (placementMode !== 'manual') return
-    const demand = parseFloat(manualDemand) || 1
     const newCust: Customer = {
       id: `C${customers.length + 1}`,
       x: world.x,
       y: world.y,
-      demand,
+      demand: 1,
     }
     setCustomers((prev) => [...prev, newCust])
   }
@@ -238,48 +231,18 @@ export default function WarehousePage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-semibold uppercase text-muted-foreground block mb-1">
-                    Placement Mode
-                  </label>
-                  <Select
-                    value={placementMode}
-                    onChange={(e) => setPlacementMode(e.target.value as CustomerPlacementMode)}
-                    options={[
-                      { value: 'random', label: 'Random Placement' },
-                      { value: 'manual', label: 'Manual Coordinates' },
-                    ]}
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold uppercase text-muted-foreground block mb-1">
-                    Demand Mode
-                  </label>
-                  <Select
-                    value={demandMode}
-                    onChange={(e) => {
-                      const mode = e.target.value as CustomerDemandMode
-                      setDemandMode(mode)
-                      if (mode === 'equal') {
-                        setCustomers((prev) => prev.map((c) => ({ ...c, demand: 1 })))
-                      } else if (mode === 'random') {
-                        setCustomers((prev) =>
-                          prev.map((c) => ({
-                            ...c,
-                            demand: Math.floor(Math.random() * 10) + 1,
-                          }))
-                        )
-                      }
-                    }}
-                    options={[
-                      { value: 'equal', label: 'Equal Demand (1.0)' },
-                      { value: 'random', label: 'Random Demand (1–10)' },
-                      { value: 'manual', label: 'Custom Demand' },
-                    ]}
-                  />
-                </div>
+              <div>
+                <label className="text-xs font-semibold uppercase text-muted-foreground block mb-1">
+                  Placement Mode
+                </label>
+                <Select
+                  value={placementMode}
+                  onChange={(e) => setPlacementMode(e.target.value as CustomerPlacementMode)}
+                  options={[
+                    { value: 'random', label: 'Random Placement' },
+                    { value: 'manual', label: 'Manual Coordinates' },
+                  ]}
+                />
               </div>
 
               {/* Area Bounds */}
@@ -349,26 +312,20 @@ export default function WarehousePage() {
               ) : (
                 <div className="p-3 bg-secondary/30 rounded-md border border-border space-y-2">
                   <span className="text-xs font-semibold uppercase text-muted-foreground block">
-                    Add Manual Customer
+                    Add Manual Customer (X, Y)
                   </span>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 gap-2">
                     <Input
                       type="number"
-                      placeholder="X"
+                      placeholder="X Coordinate"
                       value={manualX}
                       onChange={(e) => setManualX(e.target.value)}
                     />
                     <Input
                       type="number"
-                      placeholder="Y"
+                      placeholder="Y Coordinate"
                       value={manualY}
                       onChange={(e) => setManualY(e.target.value)}
-                    />
-                    <Input
-                      type="number"
-                      placeholder="Demand"
-                      value={manualDemand}
-                      onChange={(e) => setManualDemand(e.target.value)}
                     />
                   </div>
                   <Button
@@ -471,10 +428,10 @@ export default function WarehousePage() {
                 </div>
               </div>
 
-              {/* Syllabus-aligned Advanced Controls */}
+              {/* Execution Options */}
               <div className="pt-2 border-t border-border space-y-3">
                 <span className="text-xs font-semibold uppercase text-muted-foreground block">
-                  Syllabus Execution Options
+                  Execution Options
                 </span>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -491,7 +448,7 @@ export default function WarehousePage() {
                         }))
                       }
                       options={[
-                        { value: 'zero', label: 'Zero (Default)' },
+                        { value: 'zero', label: 'Zero' },
                         { value: 'random', label: 'Random (±10%)' },
                       ]}
                     />
@@ -612,7 +569,7 @@ export default function WarehousePage() {
                   {currentCost !== undefined ? currentCost.toFixed(2) : '—'}
                 </div>
                 <div className="text-[11px] text-muted-foreground">
-                  Demand-weighted sum F
+                  Total Nearest-Distance F
                 </div>
               </CardContent>
             </Card>
@@ -656,7 +613,7 @@ export default function WarehousePage() {
                 </span>
               </CardTitle>
               <CardDescription>
-                Visual representation of {customers.length} customer nodes, {warehouseCount} warehouse locations, and demand-weighted nearest assignments.
+                Visual representation of {customers.length} customer nodes, {warehouseCount} warehouse locations, and nearest assignments.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -703,7 +660,7 @@ export default function WarehousePage() {
                         Coords: ({wh.x.toFixed(2)}, {wh.y.toFixed(2)})
                       </div>
                       <div className="text-[11px] text-muted-foreground">
-                        Total Demand: <span className="font-semibold text-foreground font-mono">{wh.totalDemandServed.toFixed(1)}</span>
+                        Customers Served: <span className="font-semibold text-foreground font-mono">{wh.assignedCustomers}</span>
                       </div>
                     </div>
                   ))}
@@ -724,13 +681,13 @@ export default function WarehousePage() {
                 </span>
               </CardTitle>
               <CardDescription>
-                Progress of the minimal demand-weighted total distance found by the swarm.
+                Progress of the minimal total transportation distance found by the swarm.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <ConvergenceChart
                 history={snapshot?.convergenceHistory ?? []}
-                objectiveName="Demand-Weighted Distance"
+                objectiveName="Total Distance"
               />
             </CardContent>
           </Card>
@@ -745,7 +702,7 @@ export default function WarehousePage() {
                 </span>
               </CardTitle>
               <CardDescription>
-                Detailed customer locations, nearest warehouse assignment, and weighted transport costs.
+                Detailed customer locations, nearest warehouse assignment, and transport distances.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -758,8 +715,7 @@ export default function WarehousePage() {
                         <th className="py-2 px-3">Location (X, Y)</th>
                         <th className="py-2 px-3">Demand</th>
                         <th className="py-2 px-3">Assigned Warehouse</th>
-                        <th className="py-2 px-3">Euclidean Dist</th>
-                        <th className="py-2 px-3">Weighted Cost</th>
+                        <th className="py-2 px-3">Distance (Cost)</th>
                         {placementMode === 'manual' && <th className="py-2 px-3">Action</th>}
                       </tr>
                     </thead>
@@ -776,11 +732,8 @@ export default function WarehousePage() {
                           <td className="py-1.5 px-3 font-semibold text-primary">
                             Warehouse #{asgn.nearestWarehouseIndex + 1}
                           </td>
-                          <td className="py-1.5 px-3 text-muted-foreground">
-                            {asgn.distance.toFixed(2)}
-                          </td>
                           <td className="py-1.5 px-3 font-medium text-foreground">
-                            {asgn.weightedDistance.toFixed(2)}
+                            {asgn.distance.toFixed(2)}
                           </td>
                           {placementMode === 'manual' && (
                             <td className="py-1.5 px-3">

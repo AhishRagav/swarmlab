@@ -110,10 +110,10 @@ export function ProjectionPlot({
       colorscale: 'Viridis',
       contours: { coloring: 'heatmap', showlabels: false },
       colorbar: {
-        title: { text: `f(x${axisX + 1}, x${axisY + 1} | gbest)`, font: { size: 10, color: '#94a3b8' } },
+        title: { text: `f(x${axisX + 1}, x${axisY + 1} | gbest)`, font: { size: 10, color: '#a1a1aa' } },
         thickness: 12,
         len: 0.8,
-        tickfont: { size: 9, color: '#94a3b8' },
+        tickfont: { size: 9, color: '#a1a1aa' },
       },
       hoverinfo: 'x+y+z',
       name: 'Slice Contour',
@@ -160,21 +160,21 @@ export function ProjectionPlot({
   const layout: Partial<Plotly.Layout> = {
     title: {
       text: `2D Projection (x${axisX + 1} vs x${axisY + 1}) with Other Dimensions Fixed at gbest`,
-      font: { size: 13, color: '#f8fafc' },
+      font: { size: 13, color: '#f5f5f4' },
     },
     xaxis: {
-      title: { text: `x${axisX + 1}`, font: { size: 12, color: '#94a3b8' } },
+      title: { text: `x${axisX + 1}`, font: { size: 12, color: '#a1a1aa' } },
       range: [bX[0], bX[1]],
-      gridcolor: '#334155',
-      zerolinecolor: '#475569',
+      gridcolor: '#3f454d',
+      zerolinecolor: '#525b66',
     },
     yaxis: {
-      title: { text: `x${axisY + 1}`, font: { size: 12, color: '#94a3b8' } },
+      title: { text: `x${axisY + 1}`, font: { size: 12, color: '#a1a1aa' } },
       range: [bY[0], bY[1]],
-      gridcolor: '#334155',
-      zerolinecolor: '#475569',
+      gridcolor: '#3f454d',
+      zerolinecolor: '#525b66',
     },
-    legend: { orientation: 'h', y: -0.22, font: { color: '#94a3b8', size: 11 } },
+    legend: { orientation: 'h', y: -0.22, font: { color: '#a1a1aa', size: 11 } },
   }
 
   return (

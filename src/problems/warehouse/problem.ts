@@ -178,16 +178,26 @@ export function createWarehouseProblem(
 }
 
 /**
- * Utility to generate customer distributions (equal or random demand) reproducibly.
+ * Utility to generate customer distributions reproducibly.
+ * All customers have equal demand = 1.
  */
 export function generateRandomCustomers(
   count: number,
   bounds: WarehouseBounds = DEFAULT_WAREHOUSE_BOUNDS,
-  demandMode: 'equal' | 'random' = 'equal',
-  fixedDemand = 1,
+  seedOrMode?: number | string,
+  _fixedDemand?: number,
   seed?: number
 ): Customer[] {
-  const rng = createRNG(seed)
+  const resolvedSeed =
+    typeof seedOrMode === 'number'
+      ? seedOrMode
+      : seed !== undefined
+      ? seed
+      : typeof _fixedDemand === 'number'
+      ? _fixedDemand
+      : undefined
+
+  const rng = createRNG(resolvedSeed)
   const customers: Customer[] = []
 
   const spanX = bounds.maxX - bounds.minX
@@ -196,16 +206,12 @@ export function generateRandomCustomers(
   for (let i = 0; i < count; i++) {
     const x = bounds.minX + rng.random() * spanX
     const y = bounds.minY + rng.random() * spanY
-    const demand =
-      demandMode === 'equal'
-        ? fixedDemand
-        : Math.floor(rng.random() * 10) + 1 // integer demand between 1 and 10
 
     customers.push({
       id: `C${i + 1}`,
       x: Math.round(x * 100) / 100,
       y: Math.round(y * 100) / 100,
-      demand,
+      demand: 1,
     })
   }
 

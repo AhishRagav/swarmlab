@@ -67,7 +67,7 @@ export function SurfacePlot({ bounds, evaluate, particles, gbest, className }: S
           title: { text: 'Objective', font: { size: 10, color: '#94a3b8' } },
           thickness: 12,
           len: 0.6,
-          tickfont: { size: 9, color: '#94a3b8' },
+          tickfont: { size: 9, color: '#a1a1aa' },
         },
         opacity: 0.9,
       },
@@ -96,16 +96,16 @@ export function SurfacePlot({ bounds, evaluate, particles, gbest, className }: S
   }
 
   const layout: Partial<Plotly.Layout> = {
-    title: { text: '3D Search Space & Swarm Distribution', font: { size: 14, color: '#f8fafc' } },
+    title: { text: '3D Search Space & Swarm Distribution', font: { size: 14, color: '#f5f5f4' } },
     scene: {
-      xaxis: { title: { text: 'x₁', font: { size: 11, color: '#94a3b8' } }, range: [b0[0], b0[1]] },
-      yaxis: { title: { text: 'x₂', font: { size: 11, color: '#94a3b8' } }, range: [b1[0], b1[1]] },
-      zaxis: { title: { text: 'x₃', font: { size: 11, color: '#94a3b8' } }, range: [b2[0], b2[1]] },
+      xaxis: { title: { text: 'x₁', font: { size: 11, color: '#a1a1aa' } }, range: [b0[0], b0[1]] },
+      yaxis: { title: { text: 'x₂', font: { size: 11, color: '#a1a1aa' } }, range: [b1[0], b1[1]] },
+      zaxis: { title: { text: 'x₃', font: { size: 11, color: '#a1a1aa' } }, range: [b2[0], b2[1]] },
       camera: {
         eye: { x: 1.5, y: 1.5, z: 1.2 },
       },
     },
-    legend: { orientation: 'h', y: -0.1, font: { color: '#94a3b8', size: 11 } },
+    legend: { orientation: 'h', y: -0.1, font: { color: '#a1a1aa', size: 11 } },
   }
 
   return (

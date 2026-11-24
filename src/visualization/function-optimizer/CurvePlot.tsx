@@ -73,7 +73,7 @@ export function CurvePlot({ bounds, evaluate, particles, gbest, className }: Cur
       type: 'scatter',
       mode: 'lines',
       name: 'Objective Function f(x)',
-      line: { color: '#8b5cf6', width: 2.5 },
+      line: { color: '#f59e0b', width: 2.5 },
       hoverinfo: 'x+y',
     },
     {
@@ -83,9 +83,9 @@ export function CurvePlot({ bounds, evaluate, particles, gbest, className }: Cur
       mode: 'markers',
       name: 'Particles',
       marker: {
-        color: '#06b6d4',
-        size: 9,
-        line: { color: '#0f172a', width: 1.5 },
+        color: '#ffffff',
+        size: 8,
+        line: { color: '#111315', width: 1.5 },
       },
       text: particlePoints.text,
       hoverinfo: 'text+y',
@@ -110,19 +110,19 @@ export function CurvePlot({ bounds, evaluate, particles, gbest, className }: Cur
   }
 
   const layout: Partial<Plotly.Layout> = {
-    title: { text: '1D Function Curve & Swarm Positions', font: { size: 14, color: '#f8fafc' } },
+    title: { text: '1D Function Curve & Swarm Positions', font: { size: 14, color: '#f5f5f4' } },
     xaxis: {
-      title: { text: 'x₁', font: { size: 12, color: '#94a3b8' } },
+      title: { text: 'x₁', font: { size: 12, color: '#a1a1aa' } },
       range: [bounds?.[0] ?? -5.12, bounds?.[1] ?? 5.12],
-      gridcolor: '#334155',
-      zerolinecolor: '#475569',
+      gridcolor: '#3f454d',
+      zerolinecolor: '#525b66',
     },
     yaxis: {
-      title: { text: 'f(x₁)', font: { size: 12, color: '#94a3b8' } },
-      gridcolor: '#334155',
-      zerolinecolor: '#475569',
+      title: { text: 'f(x₁)', font: { size: 12, color: '#a1a1aa' } },
+      gridcolor: '#3f454d',
+      zerolinecolor: '#525b66',
     },
-    legend: { orientation: 'h', y: -0.2, font: { color: '#94a3b8', size: 11 } },
+    legend: { orientation: 'h', y: -0.2, font: { color: '#a1a1aa', size: 11 } },
   }
 
   return (

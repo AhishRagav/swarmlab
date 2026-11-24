@@ -486,10 +486,10 @@ export default function FunctionOptimizerPage() {
                 </div>
               </div>
 
-              {/* Syllabus-aligned Advanced Controls */}
+              {/* Execution Options */}
               <div className="pt-2 border-t border-border space-y-3">
                 <span className="text-xs font-semibold uppercase text-muted-foreground block">
-                  Syllabus Execution Options
+                  Execution Options
                 </span>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -506,7 +506,7 @@ export default function FunctionOptimizerPage() {
                         }))
                       }
                       options={[
-                        { value: 'zero', label: 'Zero (Syllabus Default)' },
+                        { value: 'zero', label: 'Zero' },
                         { value: 'random', label: 'Random (±10% Range)' },
                       ]}
                     />
@@ -525,7 +525,7 @@ export default function FunctionOptimizerPage() {
                         }))
                       }
                       options={[
-                        { value: 'clipping', label: 'Position Clipping (Default)' },
+                        { value: 'clipping', label: 'Position Clipping' },
                         { value: 'absorb', label: 'Absorb (Zero Velocity)' },
                       ]}
                     />
@@ -692,47 +692,60 @@ export default function FunctionOptimizerPage() {
             </CardContent>
           </Card>
 
-          {/* Live Swarm Particle Inspector */}
+          {/* Live Swarm Particle Population */}
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center justify-between">
-                <span>Swarm Population Sample</span>
-                <span className="text-xs font-normal text-muted-foreground">
-                  Showing first {Math.min(5, algorithmState?.particles.length || 0)} particles
+                <span>Swarm Population</span>
+                <span className="text-xs font-mono text-muted-foreground">
+                  All {algorithmState?.particles.length || 0} particles
                 </span>
               </CardTitle>
               <CardDescription>
-                Live particle coordinates, velocity magnitudes, and personal best values.
+                Live particle coordinates, current objective values, velocities, and personal best values.
               </CardDescription>
             </CardHeader>
             <CardContent>
               {algorithmState?.particles && algorithmState.particles.length > 0 ? (
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto max-h-80 overflow-y-auto border border-border rounded-md">
                   <table className="w-full text-xs text-left border-collapse">
-                    <thead>
-                      <tr className="border-b border-border text-muted-foreground font-semibold">
-                        <th className="py-2 px-2">#</th>
-                        <th className="py-2 px-2">Position Sample</th>
-                        <th className="py-2 px-2">Velocity Norm</th>
-                        <th className="py-2 px-2">Personal Best</th>
+                    <thead className="bg-secondary/80 sticky top-0 backdrop-blur z-10 text-muted-foreground font-semibold">
+                      <tr className="border-b border-border">
+                        <th className="py-2 px-3">#</th>
+                        <th className="py-2 px-3">Position Vector</th>
+                        <th className="py-2 px-3">Current Objective</th>
+                        <th className="py-2 px-3">Personal Best</th>
+                        <th className="py-2 px-3">Velocity Norm</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border font-mono">
-                      {algorithmState.particles.slice(0, 5).map((p, idx) => {
+                      {algorithmState.particles.map((p, idx) => {
                         const vNorm = Math.sqrt(
                           p.velocity.reduce((sum, v) => sum + v * v, 0)
                         ).toFixed(4)
+
+                        let currentObjStr = '—'
+                        if (currentProblem) {
+                          try {
+                            currentObjStr = currentProblem.evaluate(p.position).toFixed(5)
+                          } catch {
+                            currentObjStr = p.pbestObjective.toFixed(5)
+                          }
+                        }
+
                         return (
                           <tr key={idx} className="hover:bg-accent/40">
-                            <td className="py-2 px-2 text-muted-foreground">{idx + 1}</td>
-                            <td className="py-2 px-2 text-foreground">
-                              ({p.position.slice(0, 3).map((v) => v.toFixed(3)).join(', ')}
-                              {p.position.length > 3 ? '...' : ''})
+                            <td className="py-2 px-3 text-muted-foreground font-medium">{idx + 1}</td>
+                            <td className="py-2 px-3 text-foreground whitespace-nowrap" title={p.position.map((v) => v.toFixed(5)).join(', ')}>
+                              ({p.position.map((v) => v.toFixed(3)).join(', ')})
                             </td>
-                            <td className="py-2 px-2 text-muted-foreground">{vNorm}</td>
-                            <td className="py-2 px-2 text-primary font-medium">
+                            <td className="py-2 px-3 text-foreground">
+                              {currentObjStr}
+                            </td>
+                            <td className="py-2 px-3 text-primary font-medium">
                               {p.pbestObjective.toFixed(5)}
                             </td>
+                            <td className="py-2 px-3 text-muted-foreground">{vNorm}</td>
                           </tr>
                         )
                       })}

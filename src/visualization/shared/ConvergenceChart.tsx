@@ -49,12 +49,12 @@ export const ConvergenceChart: React.FC<ConvergenceChartProps> = ({
               position: 'insideBottom',
               offset: -10,
               fontSize: 12,
-              fill: '#94a3b8',
+              fill: '#a1a1aa',
             }}
           />
           <YAxis
-            tick={{ fontSize: 11, fill: '#94a3b8' }}
-            tickLine={{ stroke: '#64748b' }}
+            tick={{ fontSize: 11, fill: '#a1a1aa' }}
+            tickLine={{ stroke: '#525b66' }}
             domain={['auto', 'auto']}
             tickFormatter={(val: number) =>
               Math.abs(val) >= 1000 || (Math.abs(val) < 0.01 && val !== 0)
@@ -64,10 +64,10 @@ export const ConvergenceChart: React.FC<ConvergenceChartProps> = ({
           />
           <Tooltip
             contentStyle={{
-              backgroundColor: '#1e293b',
-              borderColor: '#334155',
+              backgroundColor: '#242a30',
+              borderColor: '#3f454d',
               borderRadius: '0.375rem',
-              color: '#f8fafc',
+              color: '#f5f5f4',
               fontSize: '12px',
               fontFamily: 'monospace',
             }}
@@ -81,10 +81,10 @@ export const ConvergenceChart: React.FC<ConvergenceChartProps> = ({
           <Line
             type="monotone"
             dataKey="value"
-            stroke="#7c3aed"
+            stroke="#f59e0b"
             strokeWidth={2}
-            dot={history.length <= 30 ? { r: 3, fill: '#a78bfa' } : false}
-            activeDot={{ r: 5, fill: '#c084fc' }}
+            dot={history.length <= 30 ? { r: 3, fill: '#fbbf24' } : false}
+            activeDot={{ r: 5, fill: '#fcd34d' }}
             isAnimationActive={false}
           />
         </LineChart>

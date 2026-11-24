@@ -220,19 +220,9 @@ describe('Final Manual Verification — Phase 4 & Phase 5', () => {
       expect(filtered.map((c) => c.id)).toEqual(['C1', 'C3'])
     })
 
-    it('supports equal, random, and custom customer demands', () => {
+    it('verifies all generated customers have equal demand = 1', () => {
       const equalCustomers = generateRandomCustomers(15, DEFAULT_WAREHOUSE_BOUNDS, 'equal', 1, 10)
       expect(equalCustomers.every((c) => c.demand === 1)).toBe(true)
-
-      const randomCustomers = generateRandomCustomers(15, DEFAULT_WAREHOUSE_BOUNDS, 'random', 1, 10)
-      expect(randomCustomers.every((c) => c.demand >= 1 && c.demand <= 10)).toBe(true)
-
-      const customCustomers: Customer[] = [
-        { id: 'C1', x: 10, y: 10, demand: 12.5 },
-        { id: 'C2', x: 20, y: 20, demand: 0.5 },
-      ]
-      expect(customCustomers[0].demand).toBe(12.5)
-      expect(customCustomers[1].demand).toBe(0.5)
     })
 
     it('strictly assigns every customer to the nearest warehouse (argmin distance)', () => {

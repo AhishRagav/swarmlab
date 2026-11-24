@@ -125,13 +125,11 @@ describe('Warehouse Placement Problem Mathematics', () => {
     })
   })
 
-  it('generates random customer demands in [1, 10]', () => {
-    const cust = generateRandomCustomers(20, DEFAULT_WAREHOUSE_BOUNDS, 'random', 1, 999)
+  it('generates customers with equal demand = 1', () => {
+    const cust = generateRandomCustomers(20, DEFAULT_WAREHOUSE_BOUNDS, 'equal', 1, 999)
     expect(cust).toHaveLength(20)
     cust.forEach((c) => {
-      expect(c.demand).toBeGreaterThanOrEqual(1)
-      expect(c.demand).toBeLessThanOrEqual(10)
-      expect(Number.isInteger(c.demand)).toBe(true)
+      expect(c.demand).toBe(1)
     })
   })
 

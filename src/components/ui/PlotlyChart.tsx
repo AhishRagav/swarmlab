@@ -24,7 +24,7 @@ export function PlotlyChart({ data, layout, config, className, style }: PlotlyCh
       font: {
         family: 'system-ui, -apple-system, sans-serif',
         size: 12,
-        color: '#94a3b8',
+        color: '#a1a1aa',
       },
       ...layout,
     }
