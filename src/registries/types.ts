@@ -17,7 +17,7 @@ export interface ProblemRegistration {
   id: string
   name: string
   description: string
-  category: 'continuous-function' | 'facility-location' | 'combinatorial' | 'other'
+  category: 'continuous-function' | 'facility-location' | 'path-planning' | 'combinatorial' | 'other'
   route: string
   defaultDimensions?: number
   supportedDimensions?: 'any' | number[]

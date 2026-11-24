@@ -197,17 +197,84 @@ SwarmLab is an interactive educational platform for optimization algorithms, bui
   - Simplified manual customer entry to X and Y coordinates only.
   - Streamlined objective calculation ($F = \sum \min \text{dist}$), assignment tables, and warehouse summaries.
 
+### Robot Path Planning Optimizer (Completed, `feature/robot-path-planning`)
+- **Mathematical & Geometric Foundation**:
+  - Continuous waypoint-based particle representation ($2K$ dimensions for $K$ intermediate waypoints).
+  - High-precision Liang-Barsky segment-versus-closed-rectangle intersection detection covering all 7 collision conditions (crossing, edge touching, corner touching, collinear boundary overlap, endpoints inside/on boundary, tunneling).
+  - Numerically safe turning angle smoothness calculation: $S = \sum \theta_i$ with cosine clamping and angle normalization.
+  - Multi-objective minimization fitness function: $F(P) = L + \lambda_{\text{smoothness}} \times S$.
+  - Special zero-length handling when start equals goal.
+- **Strict Feasibility Lifecycle & Bounded Recovery**:
+  - Strict early-exit collision rejection: colliding candidates are immediately rejected and never admitted to $pbest$, $gbest$, or robot animation.
+  - Initial swarm generation strictly discards colliding paths up to 100 attempts per particle.
+  - Bounded recovery: step-halving ($\alpha \in [0.5, 0.25, 0.125]$) from previous valid position towards proposed candidate.
+  - True protection of personal best and global best: invalid proposed updates preserve previous valid bests.
+  - Honest "No feasible path found with the current search settings" state without fabricating solutions.
+- **Interactive 2D Path Planning Canvas**:
+  - HTML Canvas with logical world coordinate transforms $[0, W] \times [0, H]$.
+  - Five interaction modes: Select/Move/Resize obstacle, Draw Obstacle (click & drag), Set Start, Set Goal, Delete Tool.
+  - High-contrast visual markers: Start (green), Goal (red), Obstacles (graphite with amber selection and resize handle), Candidate paths (semi-transparent), Global Best path (thick amber line with waypoint nodes).
+  - Real-time HUD showing Feasible/Invalid status and waypoint counts.
+- **Robot Tracking Animation & State Synchronization**:
+  - Animate Robot feature driving a directional robot along the verified collision-free trajectory with heading rotation.
+  - Fully desynchronization-proof: all environment-altering actions (`handleAddObstacle`, `handleUpdateObstacle`, `handleDeleteObstacle`, `handleClearObstacles`, `handleGenerateRandomObstacles`, `handleSetStart`, `handleSetGoal`) immediately invoke `stopAnimation()`, resetting animation frames, robot position to `null`, and toggling UI buttons back to "Animate Robot".
+  - Strict input safety: all environment mutation inputs (Map Width/Height, Start/Goal coords, Waypoints $K$, Smoothness $\lambda$, Obstacle inspector X/Y/W/H/Delete, and canvas tool selection/random/clear buttons) are disabled (`disabled={status === 'running'}`) while the simulation is actively executing.
+- **Harmonic Lateral Corridor Waypoint Initialization & Diagnostics (Task 2)**:
+  - Root Cause Analysis: Previous independent point-by-point random noise caused successive waypoints to jump erratically in opposite directions as $K$ increased, producing high-frequency zigzags that swept large map areas and caused collision probability to scale exponentially to 1.
+  - Replaced with coherent harmonic lateral detours: interpolated baseline $W_j = S + \frac{j}{K+1}(G - S)$ modulated with smooth sinusoidal profiles $h(t) \mathbf{n}_{\perp} = (A \sin(\pi t) + B \sin(2\pi t)) \mathbf{n}_{\perp}$ and multi-tier via-point corridor routing. As $K$ scales from 3 to 15, waypoints sample smoother, collision-free corridors without erratic zigzags.
+  - Real-time Initialization Diagnostics: Exposed `initDiagnostics` (`particlesRequested`, `feasibleParticlesCount`, `rejectedCandidatesCount`, `totalAttempts`, `status`) displayed in a dedicated Graphite + Amber UI card and preserved through PSO stepping.
+- **Particle Inspector & Three-State PSO Visualization (Warehouse & Robot Path Optimizers)**:
+  - **Warehouse Placement Optimizer**:
+    - Visualizes all three fundamental PSO concepts simultaneously:
+      1. *Current Position* of selected particle (Grey markers `C1..CK`, dashed connections, grey paths).
+      2. *Personal Best (Pbest)* of selected particle (Blue markers `P1..PK`, dotted connections, blue paths).
+      3. *Global Best (Gbest)* of entire swarm (Amber markers `W1..WK`, solid demand-weighted connections).
+    - Added dedicated Particle Inspector Card with Particle selector dropdown (`Particle 1..N`), visibility toggles for Current, Pbest, and Gbest, real-time fitness metrics, and per-warehouse coordinate coordinates table.
+    - Full hover tooltips distinguishing between Current, Pbest, and Gbest warehouse markers.
+  - **Robot Path Planning Optimizer**:
+    - Visualizes all three fundamental PSO trajectory states:
+      1. *Current Position* of selected particle (thin dashed grey trajectory with waypoint markers).
+      2. *Personal Best (Pbest)* of selected particle (blue trajectory with glow and waypoint markers).
+      3. *Global Best (Gbest)* of entire swarm (thick amber trajectory with gold waypoint nodes).
+    - Strict Feasibility Enforcement: If a particle's current candidate or personal best collides or has infinite fitness, it is never drawn as a valid path and displays honest "No feasible path" metrics.
+    - Added dedicated Particle Inspector Card with Particle selector (`Particle 1..N`), visibility toggles for Current, Pbest, and Gbest, and detailed fitness metrics (Total Fitness, Path Length, Turning Smoothness penalty).
+  - **Complete Emoji Removal & Professional UI Design**:
+    - Replaced 100% of emojis across `RobotPathPage.tsx` with clean text labels and Lucide engineering icons (`Bot`, `MousePointer`, `SquarePlus`, `MapPin`, `Flag`, `Trash2`, `Shuffle`, `Square`, `AlertTriangle`, `AlertCircle`, `Eye`, `EyeOff`).
+    - Verified with automated test ensuring 0 surrogate pairs or decorative unicode characters exist in the component.
+- **Homepage Minimal & Clean Design**:
+  - Compact 3-column CSS Grid layout (`grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5`) displaying all three optimizer cards in a single row on desktop, 2 columns on tablet, and 1 column on mobile.
+  - Completely removed all decorative icons and symbols (`ƒ`, `📦`, `🤖`, `⚙️`) and category/visualization badges.
+  - Cards contain solely the optimizer name heading and concise user-friendly description.
+  - Entire card surface is clickable with subtle Graphite + Amber hover transitions.
+- **Registry & Navigation Integration**:
+  - Registered in `problemRegistry` (`robot-path-optimizer`), `visualizationRegistry`, and `algorithmRegistry` (`robot-path-pso`).
+  - Integrated with React Router (`/robot-path`), Layout navigation, and Home page tool grid.
+
 ---
 
 ## Test Results
-- **Vitest Suite**: 9 test files, 62 unit tests passing (`100% pass`).
+- **Vitest Suite**: 13 test files, 116 unit tests passing (`100% pass`).
   - `src/__tests__/smoke.test.ts` (1 test)
+  - `src/__tests__/homePage.test.ts` (5 tests)
   - `src/__tests__/visualizations.test.ts` (4 tests)
   - `src/__tests__/pso.test.ts` (11 tests)
   - `src/__tests__/simulation.test.ts` (6 tests)
   - `src/__tests__/functionProblem.test.ts` (6 tests)
   - `src/__tests__/warehouseProblem.test.ts` (8 tests)
   - `src/__tests__/warehouseCanvas.test.ts` (5 tests)
+  - `src/__tests__/robotGeometry.test.ts` (26 tests)
+  - `src/__tests__/robotPSO.test.ts` (16 tests)
+  - `src/__tests__/particleInspector.test.ts` (7 tests)
+  - `src/__tests__/registries.test.ts` (9 tests)
+  - `src/__tests__/manualVerification.test.ts` (12 tests)
+- **ESLint**: Passed with 0 errors, 0 warnings (`eslint .`).
+- **Production Build**: Successfully compiled with `0 errors` (`tsc -b && vite build`).
+  - `src/__tests__/functionProblem.test.ts` (6 tests)
+  - `src/__tests__/warehouseProblem.test.ts` (8 tests)
+  - `src/__tests__/warehouseCanvas.test.ts` (5 tests)
+  - `src/__tests__/robotGeometry.test.ts` (26 tests)
+  - `src/__tests__/robotPSO.test.ts` (16 tests)
+  - `src/__tests__/particleInspector.test.ts` (7 tests)
   - `src/__tests__/registries.test.ts` (9 tests)
   - `src/__tests__/manualVerification.test.ts` (12 tests)
 - **ESLint**: Passed with 0 errors, 0 warnings (`eslint .`).

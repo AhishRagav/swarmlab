@@ -73,9 +73,10 @@ describe('Phase 7 Registries', () => {
   })
 
   describe('Problem Registry', () => {
-    it('pre-registers built-in problems: function-optimizer and warehouse-optimizer', () => {
+    it('pre-registers built-in problems: function-optimizer, warehouse-optimizer, and robot-path-optimizer', () => {
       expect(problemRegistry.has('function-optimizer')).toBe(true)
       expect(problemRegistry.has('warehouse-optimizer')).toBe(true)
+      expect(problemRegistry.has('robot-path-optimizer')).toBe(true)
 
       const fnOpt = problemRegistry.getOrThrow('function-optimizer')
       expect(fnOpt.name).toBe('Mathematical Function Optimizer')
@@ -86,6 +87,11 @@ describe('Phase 7 Registries', () => {
       expect(whOpt.name).toBe('Warehouse Placement Optimizer')
       expect(whOpt.category).toBe('facility-location')
       expect(whOpt.route).toBe('/warehouse')
+
+      const robotOpt = problemRegistry.getOrThrow('robot-path-optimizer')
+      expect(robotOpt.name).toBe('Robot Path Planning Optimizer')
+      expect(robotOpt.category).toBe('path-planning')
+      expect(robotOpt.route).toBe('/robot-path')
     })
 
     it('invokes createProblem factory method from problem registry', () => {

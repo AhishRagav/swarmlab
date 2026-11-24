@@ -10,6 +10,8 @@ export interface Particle {
   pbestPosition: number[]
   pbestFitness: number
   pbestObjective: number
+  currentFitness?: number
+  currentObjective?: number
 }
 
 export interface PSOConfig extends AlgorithmConfig {

@@ -4,6 +4,7 @@ const navItems = [
   { to: '/', label: 'Home' },
   { to: '/function-optimizer', label: 'Function Optimizer' },
   { to: '/warehouse', label: 'Warehouse Optimizer' },
+  { to: '/robot-path', label: 'Robot Path' },
 ]
 
 export default function Layout() {

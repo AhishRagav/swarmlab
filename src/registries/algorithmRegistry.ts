@@ -1,6 +1,7 @@
 import type { AlgorithmRegistration } from './types'
 import { psoFactory, defaultPSOConfig } from '@/algorithms/pso'
 import type { PSOConfig, PSOState } from '@/algorithms/pso/types'
+import { robotPathPSOFactory } from '@/problems/robot-path'
 
 export class AlgorithmRegistry {
   private registry = new Map<string, AlgorithmRegistration>()
@@ -55,4 +56,16 @@ algorithmRegistry.register({
   category: 'swarm-intelligence',
   factory: psoFactory,
   defaultConfig: defaultPSOConfig,
+})
+
+algorithmRegistry.register({
+  id: 'robot-path-pso',
+  name: 'Robot Path PSO',
+  description:
+    'Particle Swarm Optimization for 2D robot path planning with strict collision rejection and bounded recovery.',
+  category: 'swarm-intelligence',
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  factory: robotPathPSOFactory as any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  defaultConfig: robotPathPSOFactory.getDefaultConfig() as any,
 })

@@ -107,3 +107,21 @@ visualizationRegistry.register({
   problemId: 'warehouse-optimizer',
   type: 'chart',
 })
+
+// Register Robot Path Visualizations
+visualizationRegistry.register({
+  id: 'robot-path-canvas-2d',
+  name: 'Interactive 2D Path Planning Canvas',
+  description:
+    'HTML Canvas rendering of 2D map, obstacles, start/goal markers, candidate trajectories, and global best path.',
+  problemId: 'robot-path-optimizer',
+  type: 'canvas-2d',
+})
+
+visualizationRegistry.register({
+  id: 'convergence-chart-robot-path',
+  name: 'Robot Path Fitness Convergence Chart',
+  description: 'Tracks minimization of collision-free path fitness across simulation iterations.',
+  problemId: 'robot-path-optimizer',
+  type: 'chart',
+})

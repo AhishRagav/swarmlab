@@ -42,7 +42,11 @@ export function initializeSwarm(
       }
     }
 
-    const evalResult = evaluateFn(position)
+    const rawEval = evaluateFn(position) as unknown
+    const evalResult =
+      typeof rawEval === 'number'
+        ? { fitness: rawEval, objective: rawEval }
+        : (rawEval as { fitness: number; objective: number })
 
     const particle: Particle = {
       position,
@@ -50,6 +54,8 @@ export function initializeSwarm(
       pbestPosition: position.slice(),
       pbestFitness: evalResult.fitness,
       pbestObjective: evalResult.objective,
+      currentFitness: evalResult.fitness,
+      currentObjective: evalResult.objective,
     }
 
     particles.push(particle)
@@ -172,7 +178,11 @@ export function stepSwarm(
     }
 
     // 5. Evaluate new position
-    const evalResult = evaluateFn(newPosition)
+    const rawEval = evaluateFn(newPosition) as unknown
+    const evalResult =
+      typeof rawEval === 'number'
+        ? { fitness: rawEval, objective: rawEval }
+        : (rawEval as { fitness: number; objective: number })
 
     // 6. Update personal best (pbest)
     let pbestPosition = p.pbestPosition
@@ -198,6 +208,8 @@ export function stepSwarm(
       pbestPosition,
       pbestFitness,
       pbestObjective,
+      currentFitness: evalResult.fitness,
+      currentObjective: evalResult.objective,
     }
   })
 

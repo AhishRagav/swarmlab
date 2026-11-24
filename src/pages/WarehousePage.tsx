@@ -53,6 +53,12 @@ export default function WarehousePage() {
   const [manualX, setManualX] = useState<string>('50')
   const [manualY, setManualY] = useState<string>('50')
 
+  // Particle Inspector state
+  const [selectedParticleIdx, setSelectedParticleIdx] = useState<number>(0)
+  const [showCurrent, setShowCurrent] = useState<boolean>(true)
+  const [showPbest, setShowPbest] = useState<boolean>(true)
+  const [showGbest, setShowGbest] = useState<boolean>(true)
+
   const psoEntry = useMemo(
     () => algorithmRegistry.getOrThrow('pso') as AlgorithmRegistration<PSOState, PSOConfig>,
     []
@@ -622,8 +628,192 @@ export default function WarehousePage() {
                 solution={solutionAnalysis}
                 bounds={bounds}
                 particles={algorithmState?.particles}
+                selectedParticleIndex={selectedParticleIdx}
+                showCurrent={showCurrent}
+                showPbest={showPbest}
+                showGbest={showGbest}
                 onCanvasClick={placementMode === 'manual' ? handleCanvasClick : undefined}
               />
+            </CardContent>
+          </Card>
+
+          {/* Particle Inspector (Current, Pbest, Gbest) */}
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                  <CardTitle className="text-base">Particle Inspector (PSO State Explorer)</CardTitle>
+                  <CardDescription>
+                    Inspect live Current Position, Personal Best (Pbest), and Global Best (Gbest) for any swarm particle.
+                  </CardDescription>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-muted-foreground whitespace-nowrap">
+                    Particle:
+                  </span>
+                  <Select
+                    value={String(selectedParticleIdx)}
+                    onChange={(e) => setSelectedParticleIdx(parseInt(e.target.value, 10) || 0)}
+                    className="w-36 h-8 text-xs font-mono"
+                    options={Array.from(
+                      { length: algorithmState?.particles?.length ?? psoConfig.swarmSize },
+                      (_, i) => ({
+                        value: String(i),
+                        label: `Particle ${i + 1}`,
+                      })
+                    )}
+                  />
+                </div>
+              </div>
+            </CardHeader>
+
+            <CardContent className="space-y-4">
+              {/* Fitness Comparison Metrics & Toggles */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {/* Current Position (Grey) */}
+                <div
+                  className={`p-3 rounded-lg border transition-all ${
+                    showCurrent ? 'bg-secondary/40 border-[#71717a]' : 'bg-secondary/15 border-border opacity-60'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-bold text-[#a1a1aa] flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-sm bg-[#52525b] border border-[#a1a1aa]" />
+                      Current Position
+                    </span>
+                    <Button
+                      size="sm"
+                      variant={showCurrent ? 'default' : 'outline'}
+                      className="h-6 text-[10px] px-2"
+                      onClick={() => setShowCurrent((v) => !v)}
+                    >
+                      {showCurrent ? 'Visible' : 'Hidden'}
+                    </Button>
+                  </div>
+                  <div className="text-xl font-bold font-mono text-foreground">
+                    {algorithmState?.particles?.[selectedParticleIdx]?.currentFitness !== undefined
+                      ? algorithmState.particles[selectedParticleIdx].currentFitness.toFixed(2)
+                      : '—'}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground">
+                    Particle {selectedParticleIdx + 1} Current Fitness
+                  </div>
+                </div>
+
+                {/* Personal Best Pbest (Blue) */}
+                <div
+                  className={`p-3 rounded-lg border transition-all ${
+                    showPbest ? 'bg-blue-500/10 border-blue-500/50' : 'bg-secondary/15 border-border opacity-60'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-bold text-blue-400 flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-sm bg-[#2563eb] border border-[#93c5fd]" />
+                      Personal Best (Pbest)
+                    </span>
+                    <Button
+                      size="sm"
+                      variant={showPbest ? 'default' : 'outline'}
+                      className="h-6 text-[10px] px-2"
+                      onClick={() => setShowPbest((v) => !v)}
+                    >
+                      {showPbest ? 'Visible' : 'Hidden'}
+                    </Button>
+                  </div>
+                  <div className="text-xl font-bold font-mono text-blue-400">
+                    {algorithmState?.particles?.[selectedParticleIdx]?.pbestFitness !== undefined &&
+                    algorithmState.particles[selectedParticleIdx].pbestFitness < Infinity
+                      ? algorithmState.particles[selectedParticleIdx].pbestFitness.toFixed(2)
+                      : '—'}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground">
+                    Particle {selectedParticleIdx + 1} Best Fitness
+                  </div>
+                </div>
+
+                {/* Global Best Gbest (Amber) */}
+                <div
+                  className={`p-3 rounded-lg border transition-all ${
+                    showGbest ? 'bg-amber-500/10 border-amber-500/50' : 'bg-secondary/15 border-border opacity-60'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-bold text-primary flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-sm bg-[#f59e0b] border border-white" />
+                      Global Best (Gbest)
+                    </span>
+                    <Button
+                      size="sm"
+                      variant={showGbest ? 'default' : 'outline'}
+                      className="h-6 text-[10px] px-2"
+                      onClick={() => setShowGbest((v) => !v)}
+                    >
+                      {showGbest ? 'Visible' : 'Hidden'}
+                    </Button>
+                  </div>
+                  <div className="text-xl font-bold font-mono text-primary">
+                    {algorithmState?.bestFitness !== undefined && algorithmState.bestFitness < Infinity
+                      ? algorithmState.bestFitness.toFixed(2)
+                      : '—'}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground">
+                    Swarm Global Minimum
+                  </div>
+                </div>
+              </div>
+
+              {/* Warehouse Coordinates Breakdown for Selected Particle */}
+              {algorithmState?.particles?.[selectedParticleIdx] ? (
+                <div className="border border-border rounded-md overflow-hidden text-xs">
+                  <div className="bg-secondary/60 px-3 py-2 font-semibold text-muted-foreground grid grid-cols-4 border-b border-border text-[11px] uppercase tracking-wider">
+                    <span>Warehouse</span>
+                    <span>Current (Grey)</span>
+                    <span>Pbest (Blue)</span>
+                    <span>Gbest (Amber)</span>
+                  </div>
+                  <div className="divide-y divide-border/60 font-mono">
+                    {Array.from({ length: warehouseCount }, (_, whIdx) => {
+                      const curX = algorithmState.particles[selectedParticleIdx].position[2 * whIdx]
+                      const curY = algorithmState.particles[selectedParticleIdx].position[2 * whIdx + 1]
+                      const pbX = algorithmState.particles[selectedParticleIdx].pbestPosition[2 * whIdx]
+                      const pbY = algorithmState.particles[selectedParticleIdx].pbestPosition[2 * whIdx + 1]
+                      const gbX = algorithmState.bestPosition[2 * whIdx]
+                      const gbY = algorithmState.bestPosition[2 * whIdx + 1]
+
+                      return (
+                        <div
+                          key={whIdx}
+                          className="px-3 py-2 grid grid-cols-4 items-center hover:bg-secondary/30 transition-colors"
+                        >
+                          <span className="font-sans font-medium text-foreground">
+                            Warehouse #{whIdx + 1}
+                          </span>
+                          <span className="text-[#a1a1aa]">
+                            {curX !== undefined && curY !== undefined
+                              ? `(${curX.toFixed(1)}, ${curY.toFixed(1)})`
+                              : '—'}
+                          </span>
+                          <span className="text-blue-400">
+                            {pbX !== undefined && pbY !== undefined
+                              ? `(${pbX.toFixed(1)}, ${pbY.toFixed(1)})`
+                              : '—'}
+                          </span>
+                          <span className="text-primary font-semibold">
+                            {gbX !== undefined && gbY !== undefined
+                              ? `(${gbX.toFixed(1)}, ${gbY.toFixed(1)})`
+                              : '—'}
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-xs text-muted-foreground p-3 text-center border border-dashed border-border rounded">
+                  Simulation not yet initialized. Press Play or Step to inspect live particle states.
+                </div>
+              )}
             </CardContent>
           </Card>
 

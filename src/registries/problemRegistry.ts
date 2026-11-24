@@ -1,6 +1,7 @@
 import type { ProblemRegistration } from './types'
 import { createFunctionProblem } from '@/problems/function-optimizer/problem'
 import { createWarehouseProblem } from '@/problems/warehouse/problem'
+import { createRobotPathProblem, DEFAULT_ENVIRONMENT_CONFIG } from '@/problems/robot-path'
 
 export class ProblemRegistry {
   private registry = new Map<string, ProblemRegistration>()
@@ -65,4 +66,15 @@ problemRegistry.register({
   route: '/warehouse',
   defaultDimensions: 6, // 3 warehouses * 2 dimensions
   createProblem: createWarehouseProblem,
+})
+
+problemRegistry.register({
+  id: 'robot-path-optimizer',
+  name: 'Robot Path Planning Optimizer',
+  description:
+    'Finds a safe and efficient path for a robot to reach its destination while avoiding obstacles.',
+  category: 'path-planning',
+  route: '/robot-path',
+  defaultDimensions: 10, // 5 waypoints * 2 dimensions
+  createProblem: () => createRobotPathProblem(DEFAULT_ENVIRONMENT_CONFIG),
 })

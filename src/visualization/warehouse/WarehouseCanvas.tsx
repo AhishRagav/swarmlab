@@ -18,6 +18,10 @@ export interface WarehouseCanvasProps {
   solution: WarehouseSolutionAnalysis | null
   bounds: WarehouseBounds
   particles?: Particle[]
+  selectedParticleIndex?: number
+  showCurrent?: boolean
+  showPbest?: boolean
+  showGbest?: boolean
   onCanvasClick?: (worldCoord: { x: number; y: number }) => void
   className?: string
 }
@@ -27,6 +31,10 @@ export function WarehouseCanvas({
   solution,
   bounds,
   particles,
+  selectedParticleIndex = 0,
+  showCurrent = true,
+  showPbest = true,
+  showGbest = true,
   onCanvasClick,
   className,
 }: WarehouseCanvasProps) {
@@ -107,8 +115,8 @@ export function WarehouseCanvas({
       ctx.restore()
     }
 
-    // 3. Customer Assignment Connection Lines
-    if (solution && solution.warehouses.length > 0) {
+    // 3. Customer Assignment Connection Lines (to Gbest)
+    if (showGbest && solution && solution.warehouses.length > 0) {
       drawCustomerAssignments(
         ctx,
         solution.assignments,
@@ -129,13 +137,55 @@ export function WarehouseCanvas({
       DEFAULT_CANVAS_PADDING
     )
 
-    // 5. Warehouse Nodes
-    if (solution && solution.warehouses.length > 0) {
+    const selectedParticle =
+      particles && selectedParticleIndex >= 0 && selectedParticleIndex < particles.length
+        ? particles[selectedParticleIndex]
+        : null
+
+    // 5. Current Position Warehouses (Grey)
+    if (showCurrent && selectedParticle && selectedParticle.position) {
+      drawParticleWarehouses(
+        ctx,
+        selectedParticle.position,
+        'current',
+        bounds,
+        dimensions,
+        DEFAULT_CANVAS_PADDING
+      )
+    }
+
+    // 6. Personal Best (Pbest) Warehouses (Blue)
+    if (showPbest && selectedParticle && selectedParticle.pbestPosition) {
+      drawParticleWarehouses(
+        ctx,
+        selectedParticle.pbestPosition,
+        'pbest',
+        bounds,
+        dimensions,
+        DEFAULT_CANVAS_PADDING
+      )
+    }
+
+    // 7. Global Best (Gbest) Warehouses (Amber)
+    if (showGbest && solution && solution.warehouses.length > 0) {
       drawWarehouses(ctx, solution.warehouses, bounds, dimensions, DEFAULT_CANVAS_PADDING)
     }
 
+    // 8. Visual Legend
+    drawCanvasLegend(ctx, dimensions, DEFAULT_CANVAS_PADDING, showCurrent, showPbest, showGbest)
+
     ctx.restore()
-  }, [customers, solution, bounds, particles, dimensions])
+  }, [
+    customers,
+    solution,
+    bounds,
+    particles,
+    dimensions,
+    selectedParticleIndex,
+    showCurrent,
+    showPbest,
+    showGbest,
+  ])
 
   // Mouse move handler for hover tooltips
   const handleMouseMove = useCallback(
@@ -147,14 +197,69 @@ export function WarehouseCanvas({
       const mouseX = e.clientX - rect.left
       const mouseY = e.clientY - rect.top
 
-      // Check warehouses first
-      if (solution?.warehouses) {
+      const selectedParticle =
+        particles && selectedParticleIndex >= 0 && selectedParticleIndex < particles.length
+          ? particles[selectedParticleIndex]
+          : null
+
+      // 1. Check Gbest Warehouses
+      if (showGbest && solution?.warehouses) {
         for (const wh of solution.warehouses) {
           const pt = toCanvasCoords(wh, bounds, dimensions, DEFAULT_CANVAS_PADDING)
           if (Math.hypot(pt.x - mouseX, pt.y - mouseY) <= 16) {
             setHoverInfo({
-              text: `Warehouse #${wh.index + 1}`,
+              text: `Gbest Warehouse #${wh.index + 1}`,
               subtext: `Coords: (${wh.x.toFixed(1)}, ${wh.y.toFixed(1)}) | Served: ${wh.assignedCustomers} customers`,
+              x: mouseX,
+              y: mouseY,
+            })
+            return
+          }
+        }
+      }
+
+      // 2. Check Pbest Warehouses
+      if (showPbest && selectedParticle?.pbestPosition) {
+        const k = Math.floor(selectedParticle.pbestPosition.length / 2)
+        for (let i = 0; i < k; i++) {
+          const wh = {
+            x: selectedParticle.pbestPosition[2 * i],
+            y: selectedParticle.pbestPosition[2 * i + 1],
+          }
+          const pt = toCanvasCoords(wh, bounds, dimensions, DEFAULT_CANVAS_PADDING)
+          if (Math.hypot(pt.x - mouseX, pt.y - mouseY) <= 14) {
+            setHoverInfo({
+              text: `Pbest Warehouse #${i + 1} (Particle ${selectedParticleIndex + 1})`,
+              subtext: `Coords: (${wh.x.toFixed(1)}, ${wh.y.toFixed(1)}) | Pbest Fitness: ${
+                selectedParticle.pbestFitness < Infinity
+                  ? selectedParticle.pbestFitness.toFixed(2)
+                  : '—'
+              }`,
+              x: mouseX,
+              y: mouseY,
+            })
+            return
+          }
+        }
+      }
+
+      // 3. Check Current Position Warehouses
+      if (showCurrent && selectedParticle?.position) {
+        const k = Math.floor(selectedParticle.position.length / 2)
+        for (let i = 0; i < k; i++) {
+          const wh = {
+            x: selectedParticle.position[2 * i],
+            y: selectedParticle.position[2 * i + 1],
+          }
+          const pt = toCanvasCoords(wh, bounds, dimensions, DEFAULT_CANVAS_PADDING)
+          if (Math.hypot(pt.x - mouseX, pt.y - mouseY) <= 14) {
+            setHoverInfo({
+              text: `Current Warehouse #${i + 1} (Particle ${selectedParticleIndex + 1})`,
+              subtext: `Coords: (${wh.x.toFixed(1)}, ${wh.y.toFixed(1)}) | Current Fitness: ${
+                selectedParticle.currentFitness !== undefined
+                  ? selectedParticle.currentFitness.toFixed(2)
+                  : '—'
+              }`,
               x: mouseX,
               y: mouseY,
             })
@@ -185,7 +290,7 @@ export function WarehouseCanvas({
 
       setHoverInfo(null)
     },
-    [customers, solution, bounds, dimensions]
+    [customers, solution, bounds, dimensions, particles, selectedParticleIndex, showCurrent, showGbest, showPbest]
   )
 
   const handleMouseLeave = useCallback(() => {
@@ -269,16 +374,20 @@ export function WarehouseCanvas({
             Legend:
           </span>
           <div className="flex items-center gap-1.5">
-            <div className="w-3.5 h-3.5 rounded-full bg-[#71717a] border border-white" />
-            <span className="text-muted-foreground">Customer (equal demand = 1)</span>
+            <div className="w-3.5 h-3.5 rounded-sm bg-[#52525b] border border-[#a1a1aa]" />
+            <span className="text-muted-foreground">Current Pos (Grey C#)</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="w-3.5 h-3.5 rounded bg-primary border border-white" />
-            <span className="text-muted-foreground">Warehouse (W#)</span>
+            <div className="w-3.5 h-3.5 rounded-sm bg-[#2563eb] border border-[#93c5fd]" />
+            <span className="text-muted-foreground">Pbest (Blue P#)</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="w-4 h-0 border-t border-dashed border-[#a1a1aa]" />
-            <span className="text-muted-foreground">Nearest Assignment</span>
+            <div className="w-3.5 h-3.5 rounded-sm bg-[#f59e0b] border border-white" />
+            <span className="text-muted-foreground">Gbest (Amber W#)</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded-full bg-[#64748b] border border-white" />
+            <span className="text-muted-foreground">Customer Node</span>
           </div>
         </div>
 
@@ -299,4 +408,128 @@ export function WarehouseCanvas({
       </div>
     </div>
   )
+}
+
+/**
+ * Draws warehouse nodes for a particle's Current Position (Grey) or Pbest (Blue).
+ */
+function drawParticleWarehouses(
+  ctx: CanvasRenderingContext2D,
+  coords: number[],
+  type: 'current' | 'pbest',
+  bounds: WarehouseBounds,
+  canvasSize: { width: number; height: number },
+  padding: { left: number; right: number; top: number; bottom: number }
+) {
+  const k = Math.floor(coords.length / 2)
+  ctx.save()
+
+  for (let i = 0; i < k; i++) {
+    const pt = toCanvasCoords({ x: coords[2 * i], y: coords[2 * i + 1] }, bounds, canvasSize, padding)
+    const size = 20
+    const half = size / 2
+
+    if (type === 'current') {
+      // Grey style for Current Position
+      ctx.beginPath()
+      ctx.arc(pt.x, pt.y, size * 0.75, 0, Math.PI * 2)
+      ctx.fillStyle = 'rgba(113, 113, 122, 0.25)'
+      ctx.fill()
+
+      ctx.beginPath()
+      ctx.rect(pt.x - half, pt.y - half, size, size)
+      ctx.fillStyle = '#52525b'
+      ctx.fill()
+      ctx.strokeStyle = '#a1a1aa'
+      ctx.lineWidth = 1.5
+      ctx.stroke()
+
+      ctx.fillStyle = '#f4f4f5'
+      ctx.font = 'bold 9px monospace'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(`C${i + 1}`, pt.x, pt.y)
+    } else {
+      // Blue style for Personal Best (Pbest)
+      ctx.beginPath()
+      ctx.arc(pt.x, pt.y, size * 0.85, 0, Math.PI * 2)
+      ctx.fillStyle = 'rgba(59, 130, 246, 0.3)'
+      ctx.fill()
+
+      ctx.beginPath()
+      ctx.rect(pt.x - half, pt.y - half, size, size)
+      ctx.fillStyle = '#2563eb'
+      ctx.fill()
+      ctx.strokeStyle = '#93c5fd'
+      ctx.lineWidth = 1.5
+      ctx.stroke()
+
+      ctx.fillStyle = '#ffffff'
+      ctx.font = 'bold 9px monospace'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(`P${i + 1}`, pt.x, pt.y)
+    }
+  }
+
+  ctx.restore()
+}
+
+/**
+ * Draws an on-canvas legend panel in the upper corner.
+ */
+function drawCanvasLegend(
+  ctx: CanvasRenderingContext2D,
+  _canvasSize: { width: number; height: number },
+  padding: { left: number; right: number; top: number; bottom: number },
+  showCurrent: boolean,
+  showPbest: boolean,
+  showGbest: boolean
+) {
+  ctx.save()
+  const items = [
+    { label: 'Current Pos', color: '#71717a', active: showCurrent, shape: 'square' as const },
+    { label: 'Pbest', color: '#3b82f6', active: showPbest, shape: 'square' as const },
+    { label: 'Gbest', color: '#f59e0b', active: showGbest, shape: 'square' as const },
+    { label: 'Customer', color: '#64748b', active: true, shape: 'circle' as const },
+  ]
+
+  const x = padding.left + 8
+  let y = padding.top + 8
+  const itemH = 14
+
+  // Subtle dark background panel
+  ctx.fillStyle = 'rgba(25, 29, 33, 0.88)'
+  ctx.strokeStyle = '#3f454d'
+  ctx.lineWidth = 1
+  ctx.fillRect(x - 4, y - 4, 105, items.length * itemH + 6)
+  ctx.strokeRect(x - 4, y - 4, 105, items.length * itemH + 6)
+
+  ctx.font = '9px monospace'
+  ctx.textAlign = 'left'
+  ctx.textBaseline = 'middle'
+
+  for (const item of items) {
+    if (item.shape === 'circle') {
+      ctx.beginPath()
+      ctx.arc(x + 4, y + itemH / 2, 3.5, 0, Math.PI * 2)
+      ctx.fillStyle = item.color
+      ctx.fill()
+      ctx.strokeStyle = '#ffffff'
+      ctx.lineWidth = 0.5
+      ctx.stroke()
+    } else {
+      ctx.fillStyle = item.active ? item.color : '#3f454d'
+      ctx.fillRect(x + 1, y + itemH / 2 - 3.5, 7, 7)
+      ctx.strokeStyle = item.active ? '#f4f4f5' : '#71717a'
+      ctx.lineWidth = 0.5
+      ctx.strokeRect(x + 1, y + itemH / 2 - 3.5, 7, 7)
+    }
+
+    ctx.fillStyle = item.active ? '#f5f5f4' : '#71717a'
+    ctx.fillText(item.label, x + 14, y + itemH / 2)
+    y += itemH
+  }
+
+  ctx.restore()
 }

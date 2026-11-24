@@ -1,10 +1,5 @@
 import { Link } from 'react-router-dom'
-import { problemRegistry, algorithmRegistry, visualizationRegistry } from '@/registries'
-
-const problemIcons: Record<string, string> = {
-  'function-optimizer': 'ƒ',
-  'warehouse-optimizer': '📦',
-}
+import { problemRegistry, algorithmRegistry } from '@/registries'
 
 export default function Home() {
   const registeredProblems = problemRegistry.getAll()
@@ -39,52 +34,22 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Problem Applications Grid from Problem Registry */}
-      <section className="grid gap-6 md:grid-cols-2">
-        {registeredProblems.map((prob) => {
-          const visList = visualizationRegistry.getForProblem(prob.id)
-          const icon = problemIcons[prob.id] ?? '⚙️'
-
-          return (
-            <Link
-              key={prob.id}
-              to={prob.route}
-              className="group block rounded-lg border border-border bg-card p-6 transition-all hover:border-primary hover:shadow-lg space-y-4"
-            >
-              <div className="flex items-start gap-4">
-                <span className="text-3xl" role="presentation">
-                  {icon}
-                </span>
-                <div className="space-y-2 flex-1">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-semibold text-card-foreground group-hover:text-primary transition-colors">
-                      {prob.name}
-                    </h2>
-                    <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-secondary text-muted-foreground">
-                      {prob.category}
-                    </span>
-                  </div>
-                  <p className="text-muted-foreground text-sm leading-relaxed">
-                    {prob.description}
-                  </p>
-                </div>
-              </div>
-
-              {/* Supported Visualizations list */}
-              <div className="pt-3 border-t border-border/60 flex flex-wrap gap-1.5 items-center">
-                <span className="text-[11px] text-muted-foreground mr-1">Visualizations:</span>
-                {visList.map((vis) => (
-                  <span
-                    key={vis.id}
-                    className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-secondary/80 text-foreground border border-border/40"
-                  >
-                    {vis.name}
-                  </span>
-                ))}
-              </div>
-            </Link>
-          )
-        })}
+      {/* Problem Applications Grid: 3 columns desktop, 2 tablet, 1 mobile */}
+      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {registeredProblems.map((prob) => (
+          <Link
+            key={prob.id}
+            to={prob.route}
+            className="group flex flex-col justify-start h-full rounded-lg border border-border bg-card p-5 transition-all duration-200 hover:border-primary hover:bg-card/90 hover:shadow-md"
+          >
+            <h2 className="text-lg font-semibold text-card-foreground group-hover:text-primary transition-colors mb-2">
+              {prob.name}
+            </h2>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {prob.description}
+            </p>
+          </Link>
+        ))}
       </section>
 
       <section className="text-center space-y-3 py-8 max-w-3xl mx-auto bg-secondary/20 p-8 rounded-xl border border-border">
