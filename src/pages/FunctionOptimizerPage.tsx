@@ -201,7 +201,7 @@ export default function FunctionOptimizerPage() {
                   }`}
                   onClick={() => setMode('predefined')}
                 >
-                  Benchmark Function
+                  Function
                 </button>
                 <button
                   type="button"
