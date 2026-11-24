@@ -48,7 +48,7 @@ problemRegistry.register({
   id: 'function-optimizer',
   name: 'Mathematical Function Optimizer',
   description:
-    'Continuous N-dimensional benchmark and custom mathematical function optimization (1 to 20 dimensions).',
+    'Finds the best value of a mathematical function while following the constraints you set.',
   category: 'continuous-function',
   route: '/function-optimizer',
   defaultDimensions: 2,
@@ -60,7 +60,7 @@ problemRegistry.register({
   id: 'warehouse-optimizer',
   name: 'Warehouse Placement Optimizer',
   description:
-    'Optimizes 2D warehouse facilities to minimize demand-weighted Euclidean distances to distributed customers.',
+    'Finds the best locations for warehouses to serve customers efficiently.',
   category: 'facility-location',
   route: '/warehouse',
   defaultDimensions: 6, // 3 warehouses * 2 dimensions
