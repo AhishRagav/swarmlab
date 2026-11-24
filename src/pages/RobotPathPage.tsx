@@ -21,6 +21,7 @@ import {
   type CanvasInteractionMode,
   RobotPathCanvas,
 } from '@/visualization/robot-path'
+import { SimulationExplanationPanel } from '@/components/SimulationExplanationPanel'
 import {
   createRobotPathProblem,
   DEFAULT_ENVIRONMENT_CONFIG,
@@ -47,6 +48,8 @@ export default function RobotPathPage() {
     algorithmState,
     maxIterations,
     convergenceHistory,
+    lastAction,
+    gbestImproved,
     configure,
     play,
     pause,
@@ -481,6 +484,21 @@ export default function RobotPathPage() {
               reset()
             }}
             onSpeedChange={setSpeed}
+          />
+
+          {/* Live Step Explanation Panel */}
+          <SimulationExplanationPanel
+            problemType="robot-path"
+            status={status}
+            iteration={iteration}
+            maxIterations={maxIterations}
+            lastAction={lastAction}
+            gbestImproved={gbestImproved}
+            extraState={{
+              recoveryOccurred: (algorithmState?.recoveryAttemptsCount ?? 0) > 0,
+              hasFeasibleSolution: algorithmState?.hasFeasibleSolution,
+              validParticlesCount: algorithmState?.validParticlesCount,
+            }}
           />
 
           {/* Robot Animation Controller */}

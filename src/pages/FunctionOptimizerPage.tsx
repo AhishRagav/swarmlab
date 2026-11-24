@@ -22,6 +22,7 @@ import {
   VariableTable,
   ConvergenceChart,
 } from '@/visualization'
+import { SimulationExplanationPanel } from '@/components/SimulationExplanationPanel'
 
 // Dedicated simulation store for the Function Optimizer page
 const useFunctionStore = createSimulationStore<PSOState, PSOConfig>()
@@ -34,6 +35,8 @@ export default function FunctionOptimizerPage() {
     snapshot,
     algorithmState,
     maxIterations,
+    lastAction,
+    gbestImproved,
     configure,
     play,
     pause,
@@ -614,6 +617,16 @@ export default function FunctionOptimizerPage() {
             onStep={step}
             onReset={reset}
             onSpeedChange={setSpeed}
+          />
+
+          {/* Live Step Explanation Panel */}
+          <SimulationExplanationPanel
+            problemType="function"
+            status={status}
+            iteration={iteration}
+            maxIterations={maxIterations}
+            lastAction={lastAction}
+            gbestImproved={gbestImproved}
           />
 
           {/* Best Solution Summary */}

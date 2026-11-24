@@ -9,6 +9,7 @@ import { Select } from '@/components/ui/Select'
 import { SimulationControls } from '@/components/SimulationControls'
 import { ConvergenceChart, WarehouseCanvas } from '@/visualization'
 import { createSimulationStore } from '@/simulation/store'
+import { SimulationExplanationPanel } from '@/components/SimulationExplanationPanel'
 import {
   createWarehouseProblem,
   generateRandomCustomers,
@@ -30,6 +31,8 @@ export default function WarehousePage() {
     snapshot,
     algorithmState,
     maxIterations,
+    lastAction,
+    gbestImproved,
     configure,
     play,
     pause,
@@ -562,6 +565,19 @@ export default function WarehousePage() {
             onStep={step}
             onReset={reset}
             onSpeedChange={setSpeed}
+          />
+
+          {/* Live Step Explanation Panel */}
+          <SimulationExplanationPanel
+            problemType="warehouse"
+            status={status}
+            iteration={iteration}
+            maxIterations={maxIterations}
+            lastAction={lastAction}
+            gbestImproved={gbestImproved}
+            extraState={{
+              hasFeasibleSolution: true,
+            }}
           />
 
           {/* Solution Metrics Summary */}

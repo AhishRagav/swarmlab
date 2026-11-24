@@ -3,6 +3,7 @@ import { createRNG, type RNG } from '@/lib/rng'
 import type { ProblemDefinition } from '@/problems/types'
 import type {
   ConvergencePoint,
+  SimulationAction,
   SimulationOptions,
   SimulationSnapshot,
   SimulationStatus,
@@ -48,6 +49,8 @@ export class SimulationController<
   private currentState: TState | null = null
   private initialState: TState | null = null
   private convergenceHistory: ConvergencePoint[] = []
+  private lastAction: SimulationAction = 'init'
+  private gbestImproved = false
 
   private listeners = new Set<(snapshot: SimulationSnapshot<TState>) => void>()
 
@@ -82,6 +85,8 @@ export class SimulationController<
     this.options = { ...options }
     this.iteration = 0
     this.status = 'idle'
+    this.lastAction = 'init'
+    this.gbestImproved = false
 
     this.evaluateFn = createEvaluateFn(problem)
     this.rng = createRNG(options.seed)
@@ -115,6 +120,7 @@ export class SimulationController<
     }
 
     this.status = 'running'
+    this.lastAction = 'play'
     this.startTimer()
     this.notify()
   }
@@ -126,6 +132,7 @@ export class SimulationController<
 
     this.stopTimer()
     this.status = 'paused'
+    this.lastAction = 'pause'
     this.notify()
   }
 
@@ -149,6 +156,8 @@ export class SimulationController<
   public reset(): void {
     this.stopTimer()
     this.status = 'idle'
+    this.lastAction = 'reset'
+    this.gbestImproved = false
     this.iteration = 0
 
     if (this.factory && this.problem && this.config) {
@@ -212,6 +221,8 @@ export class SimulationController<
       convergenceHistory: [...this.convergenceHistory],
       maxIterations: this.options.maxIterations,
       problemDefinition: this.problem,
+      lastAction: this.lastAction,
+      gbestImproved: this.gbestImproved,
     }
   }
 
@@ -219,6 +230,8 @@ export class SimulationController<
     if (!this.factory || !this.problem || !this.config || !this.currentState || !this.rng || !this.evaluateFn) {
       return
     }
+
+    const prevFitness = this.currentState.bestFitness
 
     this.currentState = this.factory.step(
       this.currentState,
@@ -231,6 +244,8 @@ export class SimulationController<
     )
 
     this.iteration += 1
+    this.gbestImproved = this.currentState.bestFitness < prevFitness
+    this.lastAction = this.status === 'running' ? 'play' : 'step'
 
     this.convergenceHistory.push({
       iteration: this.iteration,
@@ -240,6 +255,7 @@ export class SimulationController<
     if (this.iteration >= this.options.maxIterations) {
       this.stopTimer()
       this.status = 'paused'
+      this.lastAction = 'complete'
     }
 
     this.notify()

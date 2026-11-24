@@ -2,7 +2,7 @@ import { create, type UseBoundStore, type StoreApi } from 'zustand'
 import type { AlgorithmConfig, AlgorithmFactory, AlgorithmState } from '@/algorithms/types'
 import type { ProblemDefinition } from '@/problems/types'
 import { SimulationController } from './controller'
-import type { ConvergencePoint, SimulationOptions, SimulationSnapshot, SimulationStatus } from './types'
+import type { ConvergencePoint, SimulationAction, SimulationOptions, SimulationSnapshot, SimulationStatus } from './types'
 
 export interface SimulationStoreState<
   TState extends AlgorithmState,
@@ -16,6 +16,8 @@ export interface SimulationStoreState<
   convergenceHistory: ConvergencePoint[]
   problem: ProblemDefinition | null
   maxIterations: number
+  lastAction: SimulationAction
+  gbestImproved: boolean
 
   configure: (
     factory: AlgorithmFactory<TState, TConfig>,
@@ -50,6 +52,8 @@ export function createSimulationStore<
         convergenceHistory: snapshot.convergenceHistory,
         problem: snapshot.problemDefinition,
         maxIterations: snapshot.maxIterations,
+        lastAction: snapshot.lastAction ?? 'init',
+        gbestImproved: snapshot.gbestImproved ?? false,
       })
     })
 
@@ -62,6 +66,8 @@ export function createSimulationStore<
       convergenceHistory: [],
       problem: null,
       maxIterations: 100,
+      lastAction: 'init',
+      gbestImproved: false,
 
       configure: (factory, problem, config, options) => {
         controller.configure(factory, problem, config, options)
