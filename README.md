@@ -53,31 +53,23 @@ Find a short, smooth and collision-free path for a robot to reach its destinatio
 
 ## Particle Swarm Optimization
 
-All three optimizers use Particle Swarm Optimization.
+All three optimizers use Particle Swarm Optimization (PSO).
 
-The velocity update equation is:
+**Velocity Update Equation:**
 
-$$
+`v_i(t+1) = w*v_i(t) + c1*r1*(pbest_i - x_i(t)) + c2*r2*(gbest - x_i(t))`
 
-v_i(t+1)=wv_i(t)+c_1r_1(pbest_i-x_i(t))+c_2r_2(gbest-x_i(t))
+**Position Update Equation:**
 
-$$
-
-The position update equation is:
-
-$$
-
-x_i(t+1)=x_i(t)+v_i(t+1)
-
-$$
+`x_i(t+1) = x_i(t) + v_i(t+1)`
 
 The application allows users to experiment with:
 
 - Swarm size
 - Maximum iterations
-- Inertia weight (\(w\))
-- Cognitive coefficient (\(c_1\))
-- Social coefficient (\(c_2\))
+- Inertia weight (w)
+- Cognitive coefficient (c1)
+- Social coefficient (c2)
 - Initial velocity
 - Velocity clamping
 - Inertia weight schedules
